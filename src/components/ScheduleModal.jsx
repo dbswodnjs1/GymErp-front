@@ -108,7 +108,8 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
 
     if (editData) {
       setForm({
-        memNum: editData.memNum || "",
+        // 🔑 수정 모드에서도 select가 제대로 선택되도록 문자열로 변환
+        memNum: editData.memNum != null ? String(editData.memNum) : "",
         empNum: editData.empNum || empNum,
         empName: editData.empName || empName,
         date: editData.startTime?.slice(0, 10) || selectedDate || "",
@@ -133,9 +134,12 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
 
   const submit = async (e) => {
     e.preventDefault();
+    const toNum = (v) => (v === "" || v == null ? null : Number(v));
+
     const payload = {
-      empNum: form.empNum,
-      memNum: form.memNum,
+      shNum: editData?.shNum, // ✅ 일정번호 추가 (수정 모드일 때만 존재)
+      empNum: toNum(form.empNum),
+      memNum: toNum(form.memNum),
       codeBid: "SCHEDULE-PT",
       startTime: `${form.date}T${form.startTime}`,
       endTime: `${form.date}T${form.endTime}`,
@@ -166,7 +170,7 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
           <Form.Select name="memNum" value={form.memNum} onChange={onChange}>
             <option value="">선택</option>
             {members.map((m) => (
-              <option key={m.memNum} value={m.memNum}>
+              <option key={m.memNum} value={String(m.memNum)}>
                 {m.memName}
               </option>
             ))}
@@ -231,8 +235,12 @@ function VacationTab({ empNum, empName, onSaved, editData, selectedDate }) {
 
   const submit = async (e) => {
     e.preventDefault();
+
+    const toNum = (v) => (v === "" || v == null ? null : Number(v));
+
     const payload = {
-      empNum: form.empNum,
+      shNum: editData?.shNum, // 
+      empNum: toNum(form.empNum),
       codeBid: "VACATION",
       startTime: `${form.startDate}T00:00`,
       endTime: `${form.endDate}T23:59`,
@@ -324,8 +332,12 @@ function EtcTab({ empNum, empName, onSaved, editData, selectedDate }) {
 
   const submit = async (e) => {
     e.preventDefault();
+
+    const toNum = (v) => (v === "" || v == null ? null : Number(v));
+
     const payload = {
-      empNum: form.empNum,
+      shNum: editData?.shNum, // 
+      empNum: toNum(form.empNum),
       codeBid: form.category,
       startTime: `${form.startDate}T00:00`,
       endTime: `${form.endDate}T23:59`,

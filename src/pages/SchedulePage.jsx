@@ -31,20 +31,24 @@ export default function SchedulePage() {
 
       const res = await axios.get(url);
 
-      const loaded = res.data.map((e) => ({
-        title: `[${e.codeBName || e.codeBId || "일정"}] ${e.empName || ""} - ${e.memo || ""}`,
-        start: new Date(e.startTime),
-        end: new Date(e.endTime),
-        color:
-          e.codeBid === "PT" || e.codeBid === "SCHEDULE-PT"
-            ? "#2ecc71"
-            : e.codeBid === "VACATION"
-            ? "#e74c3c"
-            : e.codeBid?.startsWith("ETC")
-            ? "#3498db"
-            : "#95a5a6",
-        ...e,
-      }));
+      const loaded = res.data.map((e) => {
+        const isPT = e.codeBid === "PT" || e.codeBid === "SCHEDULE-PT";
+        const typeLabel = e.codeBName || e.codeBId || "일정";
+        const memLabel = isPT && e.memName ? ` ${e.memName}` : "";
+        const empLabel = e.empName ? ` (${e.empName})` : "";
+        const memoLabel = e.memo ? ` - ${e.memo}` : "";
+        return {
+          title: `[${typeLabel}]${memLabel}${empLabel}${memoLabel}`,
+          start: new Date(e.startTime),
+          end: new Date(e.endTime),
+          color:
+            isPT ? "#2ecc71"
+              : e.codeBid === "VACATION" ? "#e74c3c"
+                : e.codeBid?.startsWith("ETC") ? "#3498db"
+                  : "#95a5a6",
+          ...e, // ← e.memNum, e.memName 그대로 보존 (수정 모달에 넘겨줌)
+        };
+      });
 
       console.log("✅ [일정 로딩 완료]", loaded.length, "건");
       setEvents(loaded);
@@ -72,7 +76,7 @@ export default function SchedulePage() {
     setSelectedEvent(event);
     setShowDetailModal(true);
   };
-//
+  //
   /** ✅ 상세 보기 → 삭제 */
   const handleDelete = async () => {
     if (!selectedEvent?.shNum) {
@@ -153,7 +157,7 @@ export default function SchedulePage() {
               <p><strong>내용:</strong> {selectedEvent.memo || "내용 없음"}</p>
               <p><strong>시작:</strong> {format(selectedEvent.start, "yyyy-MM-dd HH:mm")}</p>
               <p><strong>종료:</strong> {format(selectedEvent.end, "yyyy-MM-dd HH:mm")}</p>
-              
+
             </>
           ) : (
             <p>일정 정보를 불러오는 중...</p>

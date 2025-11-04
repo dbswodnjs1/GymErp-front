@@ -1,35 +1,103 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
-import { format, parse, startOfWeek, getDay } from "date-fns";
+import { format, parse, startOfWeek, getDay, isSameDay } from "date-fns";
 import { ko } from "date-fns/locale";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-
-// ▼ 모달 임포트 (경로는 네 위치에 맞게)
 import ScheduleOpenModal from "./ScheduleOpenModal";
 
 const locales = { ko };
 const localizer = dateFnsLocalizer({
   format,
   parse,
-  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 0 }),
+  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 0 }), // ✅ 일요일 시작
   getDay,
   locales,
 });
 
-// ScheduleCalendar (캘린더 렌더링)
 function ScheduleCalendar({ events, onSelectSlot, onSelectEvent }) {
   const [currentView, setCurrentView] = useState("month");
   const [currentDate, setCurrentDate] = useState(new Date());
-
-  // ▼ “+n” 클릭 시 띄울 모달 상태
   const [more, setMore] = useState({ show: false, date: null, events: [] });
+  const [holidayEvents, setHolidayEvents] = useState([]);
+
+  /* ✅ 공휴일 불러오기 */
+  useEffect(() => {
+    const year = new Date().getFullYear();
+    axios
+      .get(`http://localhost:9000/api/public/holidays?year=${year}`)
+      .then((res) => {
+        const items = res.data?.response?.body?.items?.item || [];
+        const holidays = items.map((d) => ({
+          title: d.dateName,
+          start: new Date(
+            d.locdate.toString().slice(0, 4),
+            Number(d.locdate.toString().slice(4, 6)) - 1,
+            d.locdate.toString().slice(6, 8)
+          ),
+          end: new Date(
+            d.locdate.toString().slice(0, 4),
+            Number(d.locdate.toString().slice(4, 6)) - 1,
+            d.locdate.toString().slice(6, 8)
+          ),
+          color: "#dc3545", // 공휴일 = 빨간색
+        }));
+        setHolidayEvents(holidays);
+      })
+      .catch((err) => console.error("❌ 공휴일 불러오기 실패:", err));
+  }, []);
+
+  /* 🔹 직원 일정 + 공휴일 병합 */
+  const mergedEvents = [...events, ...holidayEvents];
+
+  /* 🎨 요일별 + 오늘 날짜 스타일 지정 */
+  const dayPropGetter = (date) => {
+    const day = date.getDay();
+    const today = new Date();
+
+    // ✅ 오늘 날짜 강조 (밝은 연두색)
+    if (isSameDay(date, today)) {
+      return {
+        style: {
+          backgroundColor: "#e9ffd9", // 🌿 연두색 배경
+          border: "2px solid #7bd857",
+          fontWeight: "bold",
+        },
+      };
+    }
+
+    // 일요일
+    if (day === 0) {
+      return {
+        style: {
+          backgroundColor: "#fff5f5", // 연한 빨강
+          color: "#e74c3c",
+          fontWeight: "600",
+        },
+      };
+    }
+
+    // 토요일
+    if (day === 6) {
+      return {
+        style: {
+          backgroundColor: "#f0f6ff", // 연한 파랑
+          color: "#3498db",
+          fontWeight: "600",
+        },
+      };
+    }
+
+    // 평일
+    return { style: {} };
+  };
 
   return (
     <>
       <Calendar
         localizer={localizer}
-        events={events}
+        events={mergedEvents}
         startAccessor="start"
         endAccessor="end"
         selectable
@@ -41,24 +109,21 @@ function ScheduleCalendar({ events, onSelectSlot, onSelectEvent }) {
             backgroundColor: event.color || "#007bff",
             borderRadius: "5px",
             color: "white",
+            border: "none",
           },
         })}
+        dayPropGetter={dayPropGetter} // ✅ 요일 및 오늘 강조
         view={currentView}
-        onView={(view) => setCurrentView(view)}
-        date={currentDate} // 현재 달력 기준 날짜
-        onNavigate={(newDate) => setCurrentDate(newDate)} // 버튼 클릭 시 날짜 업데이트
+        onView={setCurrentView}
+        date={currentDate}
+        onNavigate={setCurrentDate}
         components={{ toolbar: CustomToolbar }}
         views={["month", "week", "day"]}
         defaultView="month"
-
-        // ▼ 라이브러리 기본 “+n” 기능 비활성 + 우리 모달로 대체
         popup={false}
-        doShowMoreDrillDown={false}   
-        onDrillDown={() => {}}                 // 날짜/헤더 클릭 전환까지 차단
         onShowMore={(evts, date) => setMore({ show: true, date, events: evts })}
       />
 
-      {/* ▼ 스케줄 자세히 보기 모달 */}
       <ScheduleOpenModal
         show={more.show}
         date={more.date}
@@ -69,7 +134,7 @@ function ScheduleCalendar({ events, onSelectSlot, onSelectEvent }) {
   );
 }
 
-// Custom Toolbar
+/* 🎛️ 커스텀 툴바 */
 function CustomToolbar({ label, onNavigate, onView }) {
   return (
     <div className="rbc-toolbar d-flex justify-content-between align-items-center mb-3">
@@ -117,4 +182,5 @@ function CustomToolbar({ label, onNavigate, onView }) {
     </div>
   );
 }
+
 export default ScheduleCalendar;
