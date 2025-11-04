@@ -1,181 +1,100 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { FaSave, FaArrowLeft } from "react-icons/fa";
 
-function EmpEdit() {
-  const { empNum } = useParams();
-  const [emp, setEmp] = useState({
-    empName: "",
-    gender: "",
-    empAddress: "",
-    empBirth: "",
-    empPhone: "",
-    empEmail: "",
-    hireDate: "",
-    fireDate: "",
-    empMemo: "",
+export default function PostEdit({ mode }) {
+  const nav = useNavigate();
+  const { postId } = useParams();
+  const isEdit = mode === "edit";
+
+  const [form, setForm] = useState({
+    title: "",
+    content: "",
+    writerName: "관리자",
+    pinned: "N",
   });
-  const navigate = useNavigate();
 
-  // 직원 기존 데이터 불러오기
   useEffect(() => {
+    if (!isEdit || !postId) return;
     axios
-      .get(`http://localhost:9000/v1/emp/${empNum}`)
-      .then((res) => setEmp(res.data))
-      .catch((err) => console.error("직원 상세조회 실패:", err));
-  }, [empNum]);
+      .get(`http://localhost:9000/v1/post/${postId}`, { params: { inc: false } })
+      .then((r) => {
+        const v = r.data ?? {};
+        setForm({
+          title: v.title ?? "",
+          content: v.content ?? "",
+          writerName: v.writerName ?? "관리자",
+          pinned: v.pinned ?? "N",
+        });
+      })
+      .catch(() => alert("불러오기 실패"));
+  }, [isEdit, postId]);
 
-  // 값 변경 처리
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setEmp((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // 수정 요청
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const submit = async () => {
+    if (!form.title || !form.content) return alert("제목/내용 필수");
     try {
-      await axios.put(`http://localhost:9000/v1/emp/${empNum}`, emp);
-      alert("직원 정보가 수정되었습니다.");
-      navigate(`/emp/${empNum}`); // 수정 후 상세 페이지로 이동
-    } catch (error) {
-      console.error("직원 수정 실패:", error);
-      alert("직원 수정에 실패했습니다.");
+      if (isEdit) {
+        await axios.put(`http://localhost:9000/v1/post/${postId}`, form);
+        nav(`/post/${postId}`);
+      } else {
+        const r = await axios.post("http://localhost:9000/v1/post", form);
+        const newId = r?.data?.id ?? r?.data;
+        nav(`/post/${newId}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("저장 실패");
     }
   };
 
   return (
-    <div className="container mt-5" style={{ maxWidth: "700px" }}>
-      <div className="card shadow-sm rounded-4 p-4 border-0">
-        <h3 className="fw-bold mb-4 text-primary">직원 정보 수정</h3>
+    <div className="d-grid gap-3">
+      <h3>{isEdit ? "게시글 수정" : "새 글 작성"}</h3>
 
-        <form onSubmit={handleSubmit}>
-          <div className="row mb-3">
-            <div className="col-md-6">
-              <label className="form-label">이름</label>
-              <input
-                type="text"
-                name="empName"
-                value={emp.empName || ""}
-                onChange={handleChange}
-                className="form-control"
-                required
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">성별</label>
-              <select
-                name="gender"
-                value={emp.gender || ""}
-                onChange={handleChange}
-                className="form-select"
-              >
-                <option value="">선택</option>
-                <option value="남">남</option>
-                <option value="여">여</option>
-              </select>
-            </div>
-          </div>
+      <input
+        className="form-control"
+        placeholder="제목"
+        value={form.title}
+        onChange={(e) => setForm((s) => ({ ...s, title: e.target.value }))}
+      />
 
-          <div className="mb-3">
-            <label className="form-label">주소</label>
-            <input
-              type="text"
-              name="empAddress"
-              value={emp.empAddress || ""}
-              onChange={handleChange}
-              className="form-control"
-            />
-          </div>
+      <textarea
+        className="form-control"
+        rows={10}
+        placeholder="내용"
+        value={form.content}
+        onChange={(e) => setForm((s) => ({ ...s, content: e.target.value }))}
+      />
 
-          <div className="row mb-3">
-            <div className="col-md-6">
-              <label className="form-label">생년월일</label>
-              <input
-                type="date"
-                name="empBirth"
-                value={emp.empBirth || ""}
-                onChange={handleChange}
-                className="form-control"
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">연락처</label>
-              <input
-                type="text"
-                name="empPhone"
-                value={emp.empPhone || ""}
-                onChange={handleChange}
-                className="form-control"
-              />
-            </div>
-          </div>
-
-          <div className="mb-3">
-            <label className="form-label">이메일</label>
-            <input
-              type="email"
-              name="empEmail"
-              value={emp.empEmail || ""}
-              onChange={handleChange}
-              className="form-control"
-            />
-          </div>
-
-          <div className="row mb-3">
-            <div className="col-md-6">
-              <label className="form-label">입사일</label>
-              <input
-                type="date"
-                name="hireDate"
-                value={emp.hireDate || ""}
-                onChange={handleChange}
-                className="form-control"
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">퇴사일</label>
-              <input
-                type="date"
-                name="fireDate"
-                value={emp.fireDate || ""}
-                onChange={handleChange}
-                className="form-control"
-              />
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <label className="form-label">메모</label>
-            <textarea
-              name="empMemo"
-              value={emp.empMemo || ""}
-              onChange={handleChange}
-              className="form-control"
-              rows="3"
-            ></textarea>
-          </div>
-
-          <div className="d-flex justify-content-between">
-            <button
-              type="button"
-              className="btn btn-secondary d-flex align-items-center gap-2"
-              onClick={() => navigate(-1)}
-            >
-              <FaArrowLeft /> 돌아가기
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary d-flex align-items-center gap-2"
-            >
-              <FaSave /> 수정 완료
-            </button>
-          </div>
-        </form>
+      <div className="d-flex align-items-center gap-3">
+        <input
+          className="form-control"
+          style={{ maxWidth: 240 }}
+          placeholder="작성자"
+          value={form.writerName}
+          onChange={(e) => setForm((s) => ({ ...s, writerName: e.target.value }))}
+        />
+        <div className="form-check">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id="pinnedCheck"
+            checked={form.pinned === "Y"}
+            onChange={(e) =>
+              setForm((s) => ({ ...s, pinned: e.target.checked ? "Y" : "N" }))
+            }
+          />
+          <label className="form-check-label" htmlFor="pinnedCheck">
+            상단고정
+          </label>
+        </div>
+        <button className="btn btn-primary" onClick={submit}>
+          {isEdit ? "수정 저장" : "등록"}
+        </button>
+        <button className="btn btn-outline-secondary" onClick={() => nav(-1)}>
+          취소
+        </button>
       </div>
     </div>
   );
 }
-
-export default EmpEdit;

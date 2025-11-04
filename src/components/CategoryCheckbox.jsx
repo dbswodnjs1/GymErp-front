@@ -2,7 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 
 
-// 부모로부터 'codeAId' (어떤 1뎁스인지)와
+// 부모로부터 'codeAId' (어떤 2뎁스인지)와
 // 'checkedList' (현재 체크된 값), 'onChange' (변경 알림 함수)를 받음
 function CategoryCheckbox({ codeAId, checkedList, onChange }) {
 
@@ -13,8 +13,8 @@ function CategoryCheckbox({ codeAId, checkedList, onChange }) {
   useEffect(() => {
     // codeAId가 유효할 때만 API 호출 (e.g., 'PRODUCT' or 'SERVICE')
     if (codeAId) {
-      // (예시 API) 부모 ID로 자식 코드 목록(2뎁스)을 가져옴
-      axios.get(`/api/v1/categories/list/${codeAId}`)
+      // (예시 API) 부모 ID로 자식 코드 목록(3뎁스)을 가져옴
+      axios.get(`/v1/categories/list/${codeAId}`)
         .then(res => {
           setOptions(res.data); // API 응답으로 옵션 state 설정
         })
@@ -41,7 +41,7 @@ function CategoryCheckbox({ codeAId, checkedList, onChange }) {
   };
 
     return <>
-      <div className="row g-2">
+      <div className="row g-2 border rounded shadow-sm">
         {options.map(opt => (
           <div className="col-4" key={opt.codeBId}>
             <label>
@@ -49,7 +49,7 @@ function CategoryCheckbox({ codeAId, checkedList, onChange }) {
                 className='form-check-input'
                 type="checkbox"
                 value={opt.codeBId}
-                // 7. "부모가 알려준" checkedList에 내가 포함되어 있는지 확인
+                // "부모가 알려준" checkedList에 내가 포함되어 있는지 확인
                 checked={checkedList.includes(opt.codeBId)}
                 onChange={handleChange}
               />

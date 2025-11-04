@@ -4,6 +4,7 @@ import { Alert, Button, Table } from "react-bootstrap";
 import axios from "axios";
 
 function EmpAttendanceMy() {
+  //myEmpNum은 로컬스토리지나 인증 컨텍스트에서 가져와야 함 하단은 테스트용으로 3고정값 넣음
   const myEmpNum = 3; // 임의 고정
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -100,7 +101,6 @@ function EmpAttendanceMy() {
     try {
       setLoading(true);
       setError("");
-      // PATCH → PUT으로 변경
       await axios.put(`/api/v1/attendance/${attNum}/checkout`);
       setMessage("퇴근 처리했습니다");
       await fetchList();
@@ -186,6 +186,7 @@ function EmpAttendanceMy() {
                 }`}
               >
                 {openToday.checkOut ? "근무 종료" : "근무 중"}
+
               </span>
             </div>
           </div>
@@ -193,6 +194,7 @@ function EmpAttendanceMy() {
           <div className="text-muted">오늘 출근 기록 없음</div>
         )}
       </div>
+
 
       {/* 최근 기록 테이블 */}
       <Table bordered hover size="sm" className="align-middle">

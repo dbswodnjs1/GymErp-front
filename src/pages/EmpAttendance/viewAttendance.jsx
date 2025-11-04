@@ -1,55 +1,43 @@
-// src/pages/EmpAttendance/admin.jsx
-import axios from "axios";
+// src/pages/EmpAttendance/myAttendance.jsx
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Button, Form, InputGroup, Table } from "react-bootstrap";
-import { useSearchParams } from "react-router-dom";
+import { Alert, Button, Table } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-// 전체조회 프로토타입
-// const fetchAll = () => {
-//   setLoading(true);
-//   setError("");
-//   fetch(`/api/v1/attendance`)
-//     .then(async (res) => {
-//       if (!res.ok) throw new Error((await res.text()) || "전체 목록 조회 실패");
-//       return res.json();
-//     })
-//     .then((data) => setRows(Array.isArray(data) ? data : []))
-//     .catch((e) => setError(e.message || "에러"))
-//     .finally(() => setLoading(false));
-// };
+function EmpAttendanceMy() {
+  const navigate = useNavigate();
 
-// 사번 검색 프로토타입
-// const fetchByEmp = (n) => {
-//   if (!n) return fetchAll();
-//   setLoading(true);
-//   setError("");
-//   const qs = new URLSearchParams();
-//   qs.set("empNum", n);
-//   fetch(`/api/v1/attendance?${qs.toString()}`)
-//     .then(async (res) => {
-//       if (!res.ok) throw new Error((await res.text()) || "직원별 목록 조회 실패");
-//       return res.json();
-//     })
-//     .then((data) => setRows(Array.isArray(data) ? data : []))
-//     .catch((e) => setError(e.message || "에러"))
-//     .finally(() => setLoading(false));
-// };
+  // myEmpNum은 로컬스토리지나 인증 컨텍스트에서 가져와야 함 (테스트용 3 고정)
+  const myEmpNum = 3;
 
-function EmpAttendanceView() {
-  const [params, setParams] = useSearchParams();
-
-  // 입력은 "이름 또는 사번" 하나로
-  const [keyword, setKeyword] = useState(params.get("q") || params.get("empNum") || "");
-
-  const [rows, setRows] = useState([]);      // 화면 표시용(필터 반영)
-  const [allRows, setAllRows] = useState([]); // 전체 데이터(이름검색용 필터 소스)
+  const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
-  // empNum -> empName 캐시
-  const [nameMap, setNameMap] = useState({}); // { "3": "홍길동", ... }
-
-  const fmtTime = (s) => (s ? s.replace("T", " ").slice(0, 19) : "");
+  // ---- 시간 유틸(로컬/KST 기준 포맷) ----
+  const toDate = (s) => {
+    if (!s) return null;
+    const str = String(s).trim().replace(" ", "T"); // 'YYYY-MM-DD HH:mm:ss' 대응
+    const d = new Date(str);
+    return isNaN(d) ? null : d;
+  };
+  const fmtTimeOnly = (s) => {
+    const d = toDate(s);
+    if (!d) return "";
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    const ss = String(d.getSeconds()).padStart(2, "0");
+    return `${hh}:${mm}:${ss}`;
+  };
+  const fmtDateOnly = (s) => {
+    const d = toDate(s);
+    if (!d) return "";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
   const fmtDur = (sec) => {
     if (sec == null) return "";
     const h = Math.floor(sec / 3600);
@@ -57,241 +45,182 @@ function EmpAttendanceView() {
     return `${h}h ${m}m`;
   };
 
-  // empNum들 이름 캐싱
-  const ensureNames = async (list) => {
-    const need = Array.from(
-      new Set(
-        (list || [])
-          .map((r) => r.empNum)
-          .filter((n) => n != null && nameMap[String(n)] == null)
-      )
-    );
-    if (need.length === 0) return;
-
-    const results = await Promise.allSettled(need.map((n) => axios.get(`/api/v1/emp/${n}`)));
-    const next = { ...nameMap };
-    results.forEach((res, i) => {
-      const n = String(need[i]);
-      if (res.status === "fulfilled") {
-        const dto = res.value.data;
-        next[n] = dto?.name ?? dto?.empName ?? `(emp ${n})`;
-      } else {
-        next[n] = `(emp ${n})`;
-      }
-    });
-    setNameMap(next);
-  };
-
-  // 전체 조회(이름검색시 소스가 됨)
-  const fetchAll = async () => {
-    setLoading(true);
-    setError("");
+  // ---- API ----
+  const fetchList = async () => {
+    if (!myEmpNum) {
+      setError("내 empNum이 없습니다. localStorage에 empNum을 저장해주세요.");
+      return;
+    }
     try {
-      const { data } = await axios.get("/api/v1/attendance");
-      const list = Array.isArray(data) ? data : [];
-      setAllRows(list);
-      setRows(list);
-      await ensureNames(list);
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || "전체목록 조회 실패");
-      setAllRows([]);
-      setRows([]);
+      setLoading(true);
+      setError("");
+      const { data } = await axios.get("/api/v1/attendance", {
+        params: { empNum: myEmpNum },
+      });
+      setRows(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setError(e.response?.data?.message || e.message || "목록 조회 실패");
     } finally {
       setLoading(false);
     }
   };
 
-  // 사번 검색(API로)
-  const fetchByEmp = async (empNum) => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await axios.get("/api/v1/attendance", { params: { empNum } });
-      const list = Array.isArray(res.data) ? res.data : [];
-      setAllRows(list); // 이름검색 전환 시에도 기반이 되도록
-      setRows(list);
-      await ensureNames(list);
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || "직원별 목록 조회 실패");
-      setAllRows([]);
-      setRows([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // URL 변화에 반응: q(키워드) 또는 empNum(숫자) 지원
   useEffect(() => {
-    const q = params.get("q") || "";
-    const n = params.get("empNum") || "";
-    setKeyword(q || n || "");
-
-    // 숫자만 -> 사번 검색
-    if (n || (/^\d+$/.test(q) && q !== "")) {
-      const num = n || q;
-      fetchByEmp(num);
-    } else if (q) {
-      // 이름검색: 전체 불러오고 클라이언트 필터
-      (async () => {
-        await fetchAll();
-        // ensureNames가 끝나야 이름 필터 가능하므로 약간 지연 적용
-        setTimeout(() => {
-          setRows((prev) =>
-            prev.filter((r) => {
-              const name = nameMap[String(r.empNum)];
-              return (name || "").toLowerCase().includes(q.toLowerCase());
-            })
-          );
-        }, 0);
-      })();
-    } else {
-      fetchAll();
-    }
+    fetchList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params]);
+  }, []);
 
-  // 검색 버튼: 숫자면 empNum 파라미터, 아니면 q 파라미터 사용
-  const handleSearch = () => {
-    const next = new URLSearchParams(params);
-    const trimmed = (keyword || "").trim();
-    if (!trimmed) {
-      next.delete("q");
-      next.delete("empNum");
-    } else if (/^\d+$/.test(trimmed)) {
-      next.set("empNum", trimmed);
-      next.delete("q");
-    } else {
-      next.set("q", trimmed);
-      next.delete("empNum");
+  // 오늘 출근(퇴근 전) 레코드
+  const openToday = useMemo(() => {
+    const now = new Date();
+    const ty = now.getFullYear(),
+      tm = now.getMonth(),
+      td = now.getDate();
+    return rows.find((r) => {
+      const base = r.attDate || r.checkIn || r.startedAt;
+      const d = toDate(base);
+      const sameDay = d && d.getFullYear() === ty && d.getMonth() === tm && d.getDate() === td;
+      const notOut = !r.checkOut;
+      return sameDay && notOut;
+    });
+  }, [rows]);
+
+  const handleCheckIn = async () => {
+    if (!myEmpNum) return;
+    try {
+      setLoading(true);
+      setError("");
+      await axios.post("/api/v1/attendance", { empNum: myEmpNum });
+      setMessage("출근 처리했습니다");
+      await fetchList();
+    } catch (e) {
+      setError(e.response?.data?.message || e.message || "출근 처리 실패");
+    } finally {
+      setLoading(false);
     }
-    setParams(next, { replace: true });
   };
 
-  // 전체 버튼
-  const handleReset = () => {
-    setKeyword("");
-    const next = new URLSearchParams(params);
-    next.delete("q");
-    next.delete("empNum");
-    setParams(next, { replace: true });
+  const handleCheckOut = async () => {
+    if (!openToday) return;
+    const attNum = openToday.attNum ?? openToday.id ?? openToday.num;
+    try {
+      setLoading(true);
+      setError("");
+      await axios.put(`/api/v1/attendance/${attNum}/checkout`);
+      setMessage("퇴근 처리했습니다");
+      await fetchList();
+    } catch (e) {
+      setError(e.response?.data?.message || e.message || "퇴근 처리 실패");
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const openCount = useMemo(
-    () =>
-      rows.filter(
-        (r) => (r.checkOut == null || r.checkOut === "") && (r.checkIn || r.startedAt)
-      ).length,
-    [rows]
-  );
 
   return (
     <>
+      {message && (
+        <Alert variant="success" onClose={() => setMessage("")} dismissible className="mt-3">
+          {message}
+        </Alert>
+      )}
       {error && (
         <Alert variant="danger" onClose={() => setError("")} dismissible className="mt-3">
           {error}
         </Alert>
       )}
 
-      <div className="d-flex align-items-center mt-3 mb-2">
-        <h1 className="me-3 mb-0">직원 출퇴근(조회)</h1>
-        <span className="badge text-bg-secondary">전체 {rows.length}건</span>
-        <span className="badge text-bg-warning ms-2">미퇴근 {openCount}명</span>
+      {/* 상단 타이틀 + 우측 이동 버튼 */}
+      <div className="mt-3 d-flex justify-content-between align-items-center">
+        <h1 className="m-0">내 출퇴근</h1>
+        <Button
+          variant="outline-primary"
+          size="sm"
+          onClick={() => navigate("/emp-attendance/view")} // 라우트에 맞게 필요시 수정
+        >
+          전 직원 출퇴근 내역
+        </Button>
       </div>
 
-      {/* 검색 영역: 이름 또는 사번 */}
-      <InputGroup className="my-3" style={{ maxWidth: 420 }}>
-        <Form.Control
-          placeholder="이름 또는 사번으로 검색"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-        />
-        <Button variant="primary" onClick={handleSearch} disabled={loading}>
-          검색
+      {/* 상단 컨트롤 */}
+      <div className="my-3 d-flex gap-2">
+        <Button
+          variant={openToday ? "secondary" : "success"}
+          disabled={loading || !!openToday || !myEmpNum}
+          onClick={handleCheckIn}
+        >
+          출근
         </Button>
-        <Button variant="outline-secondary" onClick={handleReset} disabled={loading}>
-          전체
+        <Button
+          variant="danger"
+          disabled={!openToday || loading || !myEmpNum}
+          onClick={handleCheckOut}
+        >
+          퇴근
         </Button>
-      </InputGroup>
+        <Button variant="outline-secondary" disabled={loading || !myEmpNum} onClick={fetchList}>
+          새로고침
+        </Button>
+      </div>
 
-      {/* 목록 테이블 */}
+      {/* 오늘 요약 */}
+      <div className="p-3 border rounded-3 mb-3">
+        <div className="fw-semibold mb-2">오늘 요약</div>
+        {openToday ? (
+          <div className="d-flex flex-wrap gap-4">
+            <div>
+              <span className="text-muted me-2">날짜</span>
+              {fmtDateOnly(openToday.attDate || openToday.checkIn)}
+            </div>
+            <div>
+              <span className="text-muted me-2">출근</span>
+              {fmtTimeOnly(openToday.checkIn)}
+            </div>
+            <div>
+              <span className="text-muted me-2">퇴근</span>
+              {openToday.checkOut ? fmtTimeOnly(openToday.checkOut) : "미퇴근"}
+            </div>
+            <div>
+              <span className="text-muted me-2">상태</span>
+              <span className={`badge ${openToday.checkOut ? "text-bg-secondary" : "text-bg-success"}`}>
+                {openToday.checkOut ? "근무 종료" : "근무 중"}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="text-muted">오늘 출근 기록 없음</div>
+        )}
+      </div>
+
+      {/* 최근 기록 테이블 */}
       <Table bordered hover size="sm" className="align-middle">
         <thead>
           <tr>
-            <th style={{ width: 90 }}>attNum</th>
-            <th style={{ width: 160 }}>직원명</th>
-            <th style={{ width: 120 }}>일자</th>
+            <th style={{ width: 110 }}>일자</th>
             <th>출근</th>
             <th>퇴근</th>
             <th style={{ width: 120 }}>근무시간</th>
-            <th style={{ width: 110 }}>상태</th>
-            <th style={{ width: 110 }}>액션</th>
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 && (
             <tr>
-              <td colSpan={8} className="text-center text-muted py-4">데이터 없음</td>
+              <td colSpan={4} className="text-center text-muted py-4">
+                데이터 없음
+              </td>
             </tr>
           )}
           {rows.map((r) => {
-            const attNum = r.attNum ?? r.id;
-            const attDate = (r.attDate || r.startedAt || r.checkIn || "").slice(0, 10);
-            const started = r.checkIn ?? r.startedAt ?? "";
-            const ended = r.checkOut ?? r.endedAt ?? "";
+            const attDate = fmtDateOnly(r.attDate || r.checkIn || r.startedAt);
+            const started = r.checkIn ?? r.startedAt;
+            const ended = r.checkOut ?? r.endedAt;
             const duration = r.workHours ?? r.duration ?? r.durationS ?? r.durationSec;
-            const status = ended ? (r.attState ?? "DONE") : (r.attState ?? "WORKING");
-
-            const focusThisEmp = () => {
-              const v = String(r.empNum);
-              const next = new URLSearchParams(params);
-              next.set("empNum", v);
-              next.delete("q");
-              setParams(next, { replace: true }); // → useEffect가 조회
-            };
-
-            const empName = nameMap[String(r.empNum)] ?? r.empNum;
-
+            const key = r.attNum ?? r.id ?? `${started}-${ended}`;
             return (
-              <tr key={attNum}>
-                <td>{attNum}</td>
-                <td>
-                  <Button
-                    variant="link"
-                    className="p-0"
-                    onClick={focusThisEmp}
-                    disabled={loading}
-                    title={`사번: ${r.empNum}`}
-                  >
-                    {empName}
-                  </Button>
-                </td>
+              <tr key={key}>
                 <td>{attDate}</td>
-                <td>{fmtTime(started)}</td>
-                <td>{ended ? fmtTime(ended) : <span className="text-danger">미퇴근</span>}</td>
+                <td>{fmtTimeOnly(started)}</td>
+                <td>{ended ? fmtTimeOnly(ended) : <span className="text-danger">미퇴근</span>}</td>
                 <td>{duration != null ? fmtDur(duration) : ended ? "-" : ""}</td>
-                <td>
-                  <span
-                    className={`badge ${
-                      status === "WORKING"
-                        ? "text-bg-success"
-                        : status === "DONE"
-                        ? "text-bg-secondary"
-                        : "text-bg-info"
-                    }`}
-                  >
-                    {status}
-                  </span>
-                </td>
-                <td>
-                  <Button
-                    size="sm"
-                    variant="outline-secondary"
-                    onClick={focusThisEmp}
-                    disabled={loading}
-                  >
-                    이 직원만
-                  </Button>
-                </td>
               </tr>
             );
           })}
@@ -300,4 +229,7 @@ function EmpAttendanceView() {
     </>
   );
 }
-export default EmpAttendanceView;
+
+
+export default EmpAttendanceMy;
+

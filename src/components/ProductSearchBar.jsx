@@ -1,6 +1,5 @@
 import React from 'react';
 
-// 부모로부터 keyword, onSearchChange, onSearchClick 함수를 props로 받음
 function ProductSearchBar({ keyword, onSearchChange, onSearchClick }) {
     return (
         <div className="input-group">

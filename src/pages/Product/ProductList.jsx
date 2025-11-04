@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import cn from 'classnames';
 
 import ProductListComponent from '../../components/ProductListComponent';
 import ProductSearchBar from '../../components/ProductSearchBar';
@@ -18,8 +19,16 @@ function ProductList() {
         totalPageCount: 1
     });
 
+    const productColumns = [
+        { key: 'codeBName', label: '상품 구분' },
+        { key: 'name', label: '상품 이름' },
+        { key: 'price', label: '판매가' },
+        { key: 'isActive', label: '활성화' } // 이 key가 renderCell의 if문과 일치
+    ];
+
     const [params] = useSearchParams();
     const navigate = useNavigate();
+    const location = useLocation();
 
     useEffect(() => {
         const pageNum = params.get("pageNum") || 1;
@@ -39,13 +48,20 @@ function ProductList() {
             qs.append('categoryCodes', cat);
         });
 
-        const apiEndpoint = (currentTab === 'PRODUCT') ? '/api/v1/product' : '/api/v1/service';
-
+        const apiEndpoint = (currentTab === 'PRODUCT') ? '/v1/product' : '/v1/service';
+    
         axios.get(`${apiEndpoint}?${qs.toString()}`)
-            .then(response => {
-                setPageInfo(response.data);
+            .then(res => {
+                setPageInfo(res.data);
+                
             })
-            .catch(err => console.log(err));
+            .catch(err => {                                                                                 
+             if (err.response) {                                                                         
+                 console.error('Error response from server:', err.response.data);                        
+             }                                                                                           
+             console.error('Axios error:', err);                                                         
+         }); 
+        
 
     }, [params, currentTab]);
 
@@ -89,30 +105,87 @@ function ProductList() {
         navigate(`/product?${qs.toString()}`);
     };
 
+    const handleStatusChange = (item, newIsActive)=>{
+        // 1. 'item' 객체에서 ID를 바로 꺼내 씀
+        const id = (currentTab === 'PRODUCT' ? item.productId : item.serviceId);
+        const apiEndpoint = (currentTab === 'PRODUCT') ? `/v1/product/${id}` : `/v1/service/${id}`;
+        axios.patch(apiEndpoint, {isActive : newIsActive})
+            .then(res=>{
+                // 서버 응답 성공 시, 클라이언트(React)의 'pageInfo' state도 갱신
+                setPageInfo(prevPageInfo => {
+                    
+                    // 기존 list 배열을 'map'으로 순회하여 새 배열 생성
+                    const newList = prevPageInfo.list.map(listItem => {
+                        const listItemId = (currentTab === 'PRODUCT' ? listItem.productId : listItem.serviceId);
+
+                        // 방금 ID가 일치하는 항목을 찾으면,
+                        if (listItemId === id) {
+                            // 6. 'listItem'의 다른 값은 그대로 복사하고,
+                            //    'isActive' 값만 'newIsActive'로 덮어쓴 새 객체를 반환
+                            return { ...listItem, isActive: newIsActive };
+                        }
+
+                        // ID가 다르면, 기존 'listItem'을 그대로 반환
+                        return listItem;
+                    });
+
+                    // 'prevPageInfo'를 복사하고 'list'만 'newList'로 교체한
+                    // '새 pageInfo 객체'를 반환
+                    return {
+                        ...prevPageInfo,
+                        list: newList
+                    };
+                });
+            })
+            .catch(err=>console.log(err));
+    };
+
+    const handleRowClick = (item) => {
+        const fromPath = `/product${location.search || ""}`;
+
+        if (currentTab === 'PRODUCT' && item.productId) {
+            navigate(`/product/detail/product/${item.productId}`, {
+                state: { from: fromPath, type: "PRODUCT" },
+            });
+            return;
+        }
+
+        if (currentTab === 'SERVICE' && item.serviceId) {
+            navigate(`/product/detail/service/${item.serviceId}`, {
+                state: { from: fromPath, type: "SERVICE" },
+            });
+        }
+    };
+
     return (
         <>
-            <button onClick={() => handleTabChange('PRODUCT')}>실물 상품</button>
-            <button onClick={() => handleTabChange('SERVICE')}>서비스 상품</button>
+            <button className={cn("btn", "btn-lg", {"btn-dark":currentTab=="PRODUCT", "btn-light":currentTab=="SERVICE"})} onClick={() => handleTabChange('PRODUCT')}>실물 상품</button>
+            <button className={cn("btn", "btn-lg", {"btn-dark":currentTab=="SERVICE", "btn-light":currentTab=="PRODUCT"})} onClick={() => handleTabChange('SERVICE')}>서비스 상품</button>
 
             <div className="row mt-3">
-                <div className="col-md-3">
+                <div className="col-md-3 mt-3">
                     <CategoryCheckbox
                         codeAId={currentTab}
                         checkedList={selectedCategories}
                         onChange={handleCategoryChange}
                     />
-                </div>
-                <div className="col-md-9">
                     <ProductSearchBar
                         keyword={search.keyword}
                         onSearchChange={handleSearchChange}
                         onSearchClick={handleSearchClick}
                     />
+                    
+                </div>
+                <div className="col-3">
                     <button className="btn btn-primary mt-3">상품 등록</button>
+                </div>
+                <div className="col-md-9 mt-3">
                     <ProductListComponent
                         pageInfo={pageInfo}
-                        currentTab={currentTab}
                         onPageChange={pageMove}
+                        onToggleChange={handleStatusChange}
+                        columns={productColumns}
+                        onRowClick={handleRowClick}
                     />
                 </div>
             </div>

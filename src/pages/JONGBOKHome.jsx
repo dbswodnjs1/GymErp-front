@@ -16,7 +16,7 @@ function JONGBOKHome() {
     };
     return <>
 
-        <h1>종복치킨 테스트 페이지 입니다</h1>
+        <h1>박종복용 테스트 페이지 입니다</h1>
         <ul>
             <li>
                 <NavLink to="/EmpVacationList" >휴가 리스트 테스트</NavLink>
