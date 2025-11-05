@@ -6,7 +6,7 @@ import { Modal, Button, Form, Row, Col } from "react-bootstrap";
 import { useLocation, useNavigate } from "react-router-dom";
 import ScheduleCalendar from "../components/ScheduleCalendar";
 import ScheduleModal from "../components/ScheduleModal";
-import GymIcon from "../components/icons/GymIcon";
+
 
 /* ========= 공통 유틸 ========= */
 function safeJson(s) { try { return JSON.parse(s); } catch { return null; } }
@@ -86,31 +86,71 @@ export default function SchedulePage() {
   const [editData, setEditData] = useState(null);
   const [clickedDate, setClickedDate] = useState(null);
 
+
+  // 직원 상세 → 일정으로 넘어올 때 URL 파라미터로 empNum 받기
+  const location = useLocation(); // 현재 페이지의 URL 정보
+  const params = new URLSearchParams(location.search); // 쿼리스트랑 파라미터 추출
+  const empNumFromUrl = params.get("empNum"); // 직원 상세페이지로 들어온 경우 URL 에 empNum, empName 포함되어있는지
+  const empNameFromUrl = params.get("empName");
+  const storedUser = JSON.parse(sessionStorage.getItem("user")); // 로그인한 사용자 정보 불러오기
+  const empNum = empNumFromUrl || storedUser?.empNum || null; // 1순위: URL 파라미터, 2순위: 로그인된 사용자, null
+  const empName = empNameFromUrl || storedUser?.empName || null;
+
+  /* ============================================ */
+  /** 일정 로딩 */
+  const loadSchedules = async () => {
+  try {
+    const url = empNum
+      ? `http://localhost:9000/v1/schedule/emp/${empNum}`
+      : "http://localhost:9000/v1/schedule/all";
+
+    console.log("[일정 로딩 요청] URL =", url);
+    const res = await axios.get(url);
+
+    const loaded = res.data.map((e) => {
+      const typeMap = {
+        "PT": "PT",
+        "SCHEDULE-PT": "PT",
+        "VACATION": "휴가",
+        "ETC-COUNSEL": "상담",
+        "ETC-MEETING": "회의",
+        "ETC-COMPETITION": "대회",
+      };
+
+      const typeLabel = typeMap[e.codeBid] || e.codeBName || "일정";
+
+      return {
+        title:
+          typeLabel === "PT"
+            ? `[${typeLabel}] ${e.memName || "회원"} - ${e.memo || ""}`
+            : `[${typeLabel}] ${e.empName || ""} - ${e.memo || ""}`,
+        start: new Date(e.startTime),
+        end: new Date(e.endTime),
+        color:
+          e.codeBid === "PT" || e.codeBid === "SCHEDULE-PT"
+            ? "#2ecc71"
+            : e.codeBid === "VACATION"
+            ? "#e74c3c"
+            : e.codeBid === "ETC-COMPETITION"
+            ? "#9b59b6"
+            : e.codeBid === "ETC-COUNSEL"
+            ? "#f39c12"
+            : e.codeBid === "ETC-MEETING"
+            ? "#34495e"
+            : "#95a5a6",
+        ...e,
+      };
+    });
+    setEvents(loaded);
+  } catch (err) {
+    console.error("[일정 불러오기 실패]:", err);
+  }
+};
+
+
   const roleStr = readRoleFromStorage();
   const isAdmin = isAdminRole(roleStr);
-
-  const location = useLocation();
   const navigate = useNavigate();
-  const params = new URLSearchParams(location.search);
-  const empNum = params.get("empNum");
-  const empName = params.get("empName");
-
-  // 기본/직원별 일정 로딩
-  const loadSchedules = async () => {
-    try {
-      const url = empNum
-        ? `http://localhost:9000/v1/schedule/emp/${empNum}`
-        : `http://localhost:9000/v1/schedule/all`;
-      const res = await axios.get(url);
-      const loaded = mapToEvents(res.data);
-      setEvents(loaded);
-      if (loaded.length > 0 && !focusDate) setFocusDate(loaded[0].start);
-    } catch (err) {
-      console.error("❌ [일정 불러오기 실패]:", err);
-    }
-  };
-  useEffect(() => { loadSchedules(); /* eslint-disable-next-line */ }, [empNum]);
-
   // 관리자 검색 (직원이름, 유형, 키워드만)
   const searchAdmin = async ({ empName, codeBid, keyword }) => {
     if (!isAdmin) return; // 이중 차단
@@ -125,6 +165,7 @@ export default function SchedulePage() {
     const mapped = mapToEvents(list);
     setEvents(mapped);
 
+
     if (list.length > 0) {
       const first = list[0];
       const firstEmpNum = first.empNum;
@@ -132,6 +173,12 @@ export default function SchedulePage() {
       const firstDate = new Date(first.startTime);
       setFocusDate(firstDate);
 
+
+  /* ============================================ */
+  /** 캘린더 빈 칸 클릭 → 등록 */
+  const handleSelectSlot = (slotInfo) => {
+    const dateStr = format(slotInfo.start, "yyyy-MM-dd");
+    console.log("[빈 칸 클릭]", dateStr);
       const next = new URLSearchParams(location.search);
       next.set("empNum", String(firstEmpNum));
       if (firstEmpName) next.set("empName", firstEmpName);
@@ -141,36 +188,42 @@ export default function SchedulePage() {
     }
   };
 
-  // 캘린더 인터랙션
-  const handleSelectSlot = (slotInfo) => {
-    const dateStr = format(slotInfo.start, "yyyy-MM-dd");
     setClickedDate(dateStr);
     setEditData(null);
     setShowModal(true);
   };
+
+
+  /** 일정 클릭 → 상세 보기 */
   const handleSelectEvent = (event) => {
+    console.log("[일정 클릭]", event);
     setSelectedEvent(event);
     setShowDetailModal(true);
   };
 
-  // 삭제
+
+  /** 상세 보기 → 삭제 */
   const handleDelete = async () => {
     if (!selectedEvent?.shNum) { alert("삭제할 일정의 shNum이 없습니다."); return; }
     if (!window.confirm("정말 이 일정을 삭제하시겠습니까?")) return;
     try {
       const url = `http://localhost:9000/v1/schedule/delete/${selectedEvent.shNum}`;
       await axios.delete(url);
-      alert("✅ 일정이 삭제되었습니다.");
+      alert("일정이 삭제되었습니다.");
+
       setShowDetailModal(false);
       setSelectedEvent(null);
       await loadSchedules();
     } catch (err) {
-      console.error("❌ [일정 삭제 실패]:", err);
+      console.error("[일정 삭제 실패]:", err);
       alert("삭제 중 오류가 발생했습니다.");
     }
   };
 
+
+  /** 상세 → 수정 전환 */
   const handleEdit = () => {
+    console.log("[상세 → 수정 모드 전환]");
     setShowDetailModal(false);
     setEditData(selectedEvent);
     setShowModal(true);
@@ -178,15 +231,13 @@ export default function SchedulePage() {
 
   return (
     <div>
-      <h4 style={{ fontWeight: 600, color: "#444", fontSize: "1.8rem", marginBottom: "1.2rem" }}>
-        <GymIcon size={32} color="#f1c40f" secondary="#2c3e50" /> 일정 관리
-      </h4>
-      <hr />
 
-      {/* 🔐 관리자 전용 간단 검색바 */}
+      <h4 style={{ fontWeight: "600", color: "#444", fontSize: "1.8rem", marginBottom: "1.2rem",}}>일정관리</h4>
+      <hr />
+      {/*  관리자 전용 간단 검색바 */}
       {isAdmin ? <AdminSearchBar onSearch={searchAdmin} isAdmin={isAdmin} /> : null}
 
-      {/* 📅 캘린더 */}
+      {/*  캘린더 */}
       <ScheduleCalendar
         events={events}
         onSelectSlot={handleSelectSlot}
@@ -195,15 +246,18 @@ export default function SchedulePage() {
         focusDate={focusDate}   // 해당 월로 이동
       />
 
-      {/* 🟢 등록/수정 모달 */}
+      {/* 등록/수정 모달 */}
       {showModal && (
         <ScheduleModal
           show={showModal}
           empNum={empNum}
           empName={empName}
           onSaved={() => {
-            loadSchedules();
-            setShowModal(false);
+
+            console.log(" [저장 완료 → 새로고침]");
+            loadSchedules(); // 즉시 새로고침
+            setShowModal(false); // 모달 닫기
+
             setEditData(null);
           }}
           editData={editData}
@@ -211,10 +265,10 @@ export default function SchedulePage() {
         />
       )}
 
-      {/* 📄 상세 보기 모달 */}
+      {/* 상세 보기 모달 */}
       <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} centered>
         <Modal.Header closeButton>
-          <Modal.Title>📄 일정 상세 정보</Modal.Title>
+          <Modal.Title>일정 상세 정보</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedEvent ? (

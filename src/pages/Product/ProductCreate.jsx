@@ -1,7 +1,6 @@
 // src/pages/Product/ProductCreate.jsx
 
-import { Tab } from 'bootstrap';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TextField from '../../components/SharedComponents/TextField';
 import TabSwitcher from '../../components/SharedComponents/TabSwitcher';
@@ -54,10 +53,6 @@ function ProductCreate() {
         // 탭 전환 시 다른 필드를 초기화하고 싶다면 여기에서 함께 처리
     };
 
-    useEffect(() => {
-
-    }, []);
-
     // TextField는 이벤트 객체를, BinaryRadioGroup은 (name, value) 형태를 전달합니다.
     const handleChange = (input, maybeValue) => {
         if (typeof input === 'string') {
@@ -82,15 +77,78 @@ function ProductCreate() {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
+        // 제출시 빈칸 방지 
         if (submitting) return;
+
+        if (!values.categoryCode) {
+            alert('분류를 선택해 주세요.');
+            return;
+        }
+
+        if (isProduct && !values.productName.trim()) {
+            alert('상품명을 입력해 주세요.');
+            return;
+        }
+
+        if (isService && !values.serviceName.trim()) {
+            alert('서비스명을 입력해 주세요.');
+            return;
+        }
+
+        const numericPrice = Number(values.salePrice);
+        if (Number.isNaN(numericPrice) || numericPrice < 0) {
+            alert('판매가는 0 이상 숫자로 입력해 주세요.');
+            return;
+        }
+
+        // 메모 검증 
+        const sanitizedMemo =
+            values.memo?.trim() === '' ? '특이사항 없음' : values.memo.trim();
+
+        let endpoint = '/v1/product';
+        let payload;
+
+        // 제품인 경우의 payload 구성
+        if (isProduct) {
+            payload = {
+                codeBId: values.categoryCode,
+                name: values.productName,
+                price: numericPrice,
+                isActive: values.saleStatus === 'ACTIVE' ? 1 : 0,
+                note: sanitizedMemo,
+            };
+        } else { 
+            // 서비스인 경우에 구성되는 payload
+            const rawServiceValue =
+                values.serviceSessionCount || values.serviceDurationDays || '';
+            const serviceAmount = rawServiceValue !== ''
+                ? Number(rawServiceValue)
+                : null;
+
+            if (
+                (isPtService || isMembershipService) &&
+                (serviceAmount === null || Number.isNaN(serviceAmount))
+            ) {
+                alert('서비스 이용 정보를 올바르게 입력해 주세요.');
+                return;
+            }
+
+            endpoint = '/v1/service';
+            payload = {
+                codeBId: values.categoryCode,
+                name: values.serviceName,
+                price: numericPrice,
+                isActive: values.saleStatus === 'ACTIVE' ? 1 : 0,
+                note: sanitizedMemo,
+                serviceValue: serviceAmount,
+            };
+        }
+
         setSubmitting(true);
         try {
-            // TODO: 실제 등록 API 규격에 맞게 payload를 보정한 뒤 아래 요청을 유지하세요.
-            axios.post('/v1/product', {
-                ...values,
-            });
-            console.log('폼 제출', values);
-            alert('등록 로직을 구현하세요.'); // 필요 없으면 제거해도 됩니다.
+            await axios.post(endpoint, payload);
+            alert(isProduct ? '상품이 등록되었습니다.' : '서비스가 등록되었습니다.');
+            navigate('/product');
         } catch (error) {
             console.error(error);
             alert('등록 중 문제가 발생했습니다.');

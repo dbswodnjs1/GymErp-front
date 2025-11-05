@@ -73,20 +73,30 @@ export default function BsSideBar() {
         </NavLink>
       </div>
 
+
       {/* 스크롤 되는 메뉴 영역 */}
       <div className="p-3 flex-grow-1 overflow-auto">
-        <ul className="nav nav-pills flex-column gap-2 m-0">
-          <DropdownMenu icon="people" title="직원관리">
-            <SubMenuItem to="/emp" icon="table" text="직원목록" />
-            <SubMenuItem to="/attendance/my" icon="clock-history" text="출퇴근 기록" />
-          </DropdownMenu>
+        <ul className="nav nav-pills flex-column gap-2">
+          {/* 일반 메뉴 */}
+          {/* <li className="nav-item">
+            <NavLink to="/" end className={({isActive}) => 
+                `nav-link text-white fs-6 ${isActive ? 'active' : ''}`
+              }
+            >
+              <i className="bi bi-speedometer2"></i>
+              <span className="ms-2">Dashboard</span>
+            </NavLink>
+          </li> */}
 
-          <DropdownMenu icon="people-fill" title="회원관리">
+          {/* 드롭다운 메뉴 */}
+          <DropdownMenu icon="people" title="직원">
+            <SubMenuItem to="/emp" icon="table" text="직원목록"/>
+            <SubMenuItem to="/schedule" icon="calendar-event" text="일정관리"/>
+          </DropdownMenu>
+          <DropdownMenu icon="people-fill" title="회원">
             <SubMenuItem to="/member" icon="table" text="회원목록" />
           </DropdownMenu>
-
-          <DropdownMenu icon="people-fill" title="매출관리">
-
+          <DropdownMenu icon="people-fill" title="매출">
             <SubMenuItem to="/sales/SalesItemList" icon="cart-plus" text="상품판매리스트" />
 
           </DropdownMenu>

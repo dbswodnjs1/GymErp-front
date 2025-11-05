@@ -31,14 +31,14 @@ const defaultValues = {
 function ProductDetail(props) {
 
     // 파라미터, 로케이션, 네비게이트 훅 
-    const params = useParams();
+    const { itemType, itemId } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
 
-    // 상품인지 서비스인지 판단
-    const isServiceRoute = Boolean(params.serviceId);
-    // 서비스면 서비스ID, 상품이면 상품ID를 타겟 아이디로 설정 
-    const targetId = isServiceRoute ? params.serviceId : params.productId;
+    // 라우트 파라미터 기준으로 타입/ID 결정
+    const normalizedType = itemType?.toUpperCase() === "SERVICE" ? "SERVICE" : "PRODUCT";
+    const isServiceRoute = normalizedType === "SERVICE";
+    const targetId = itemId;
 
     // 상태값
     const [values, setValues] = useState(defaultValues);
@@ -88,7 +88,7 @@ function ProductDetail(props) {
 
                 const normalized = {
                     // 서비스인지 실물인지에 따라 productType 설정
-                    productType: isServiceRoute ? "SERVICE" : "PRODUCT",
+                    productType: normalizedType,
                     categoryLabel,
                     productName: data.name ?? "",
                     salePrice:
@@ -124,7 +124,7 @@ function ProductDetail(props) {
             } // 위 모든 과정들을 페치디테일에 담기
         };
         fetchDetail();
-    }, [isServiceRoute, targetId]);
+    }, [isServiceRoute, targetId, normalizedType]);
 
     if (loading) {
         return <div>상세 정보를 불러오는 중입니다...</div>;
@@ -135,12 +135,8 @@ function ProductDetail(props) {
 
     // 수정 버튼 클릭 핸들러
     const handleEdit = () => {
-        // 서비스 여부에 따라 다른 편집 경로로 네비게이트
-        if (isServiceRoute) {
-            navigate(`/service/edit/${targetId}`);
-        } else {
-            navigate(`/product/edit/${targetId}`);
-        }
+        const editType = normalizedType.toLowerCase();
+        navigate(`/product/edit/${editType}/${targetId}`);
     };
 
 
@@ -226,7 +222,6 @@ function ProductDetail(props) {
                 readOnly
             />
 
-
             <div className="d-flex gap-2 mt-4">
                 <button type="button" className="btn btn-outline-secondary" onClick={() => navigate(backToList)}>
                     목록으로
@@ -235,13 +230,8 @@ function ProductDetail(props) {
                     수정하기
                 </button>
             </div>
-
-
-
-
-
-            </div>
-            );
+        </div>
+    );
 }
 
-            export default ProductDetail;
+export default ProductDetail;

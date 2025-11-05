@@ -1,0 +1,14 @@
+.badge-purple {
+  background-color: #9b59b6 !important;
+  color: #fff !important;
+}
+
+.badge-navy {
+  background-color: #34495e !important; /* 회의 */
+  color: #fff !important;
+}
+
+.badge-orange {
+  background-color: #f39c12 !important; /* 상담 */
+  color: #fff !important;
+}

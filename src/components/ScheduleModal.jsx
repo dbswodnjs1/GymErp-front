@@ -25,7 +25,7 @@ export default function ScheduleModal({
   }, [editData]);
 
   const handleSaved = (payload) => {
-    console.log("✅ [일정 저장 완료] payload:", payload);
+    console.log("[일정 저장 완료] payload:", payload);
     onSaved?.(payload);
   };
 
@@ -88,7 +88,7 @@ export default function ScheduleModal({
 }
 
 /* ============================================================= */
-/* 🟢 PT 탭 */
+/* PT 탭 */
 function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
   const [form, setForm] = useState({
     memNum: "",
@@ -99,6 +99,21 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
     endTime: "",
     memo: "",
   });
+
+  //회원 선택 시 전화번호 관련 기능
+  const fmtPhone = (v) => {
+    if (!v) return "";
+    const s = String(v).replace(/\D/g, "");
+    if (s.length === 11) return s.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3"); // 010-1234-5678
+    if (s.length === 10) return s.replace(/(\d{2,3})(\d{3,4})(\d{4})/, "$1-$2-$3"); // 02-1234-5678 등
+    return v; // 그 외는 원문
+  };
+
+  //회원 가나다 정렬용 유틸
+  const sortByKoName = (arr) =>
+    [...(Array.isArray(arr) ? arr : [])].sort((a, b) =>
+      (a.memName || "").localeCompare(b.memName || "", "ko")
+    );
 
   const [members, setMembers] = useState([]);
 
@@ -124,7 +139,7 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
 
     axios
       .get("http://localhost:9000/v1/member")
-      .then((res) => setMembers(res.data))
+      .then((res) => setMembers(sortByKoName(res.data)))  // ← 정렬해서 세팅
       .catch((err) => console.error("❌ 회원 목록 불러오기 실패:", err));
   }, [empNum, empName, editData, selectedDate]);
 
@@ -141,21 +156,20 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
       endTime: `${form.date}T${form.endTime}`,
       memo: form.memo,
     };
-    console.log("📦 [PT payload 확인]", payload);
+    console.log("[PT payload 확인]", payload);
 
     try {
       if (editData) {
         await axios.put("http://localhost:9000/v1/schedule/update", payload);
-        alert("✅ PT 일정이 수정되었습니다.");
+        alert("PT 일정이 수정되었습니다.");
       } else {
         await axios.post("http://localhost:9000/v1/schedule/add", payload);
-        alert("✅ PT 일정이 등록되었습니다.");
+        alert("PT 일정이 등록되었습니다.");
       }
 
-      // 모달 닫기 X — 부모에서 제어
       onSaved?.(payload);
     } catch (err) {
-      console.error("❌ PT 일정 등록/수정 실패:", err);
+      console.error("PT 일정 등록/수정 실패:", err);
       alert("등록 중 오류가 발생했습니다.");
     }
   };
@@ -167,11 +181,16 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
           <Form.Label>회원명</Form.Label>
           <Form.Select name="memNum" value={form.memNum} onChange={onChange}>
             <option value="">선택</option>
-            {members.map((m) => (
-              <option key={m.memNum} value={m.memNum}>
-                {m.memName}
-              </option>
-            ))}
+            {members.map((m) => {
+              // 프로젝트 컬럼명 대비: memPhone → phone → tel → memTel → mobile 순
+              const rawPhone = m.memPhone ?? m.phone ?? m.tel ?? m.memTel ?? m.mobile ?? "";
+              const label = `${m.memName}${rawPhone ? " : " + fmtPhone(rawPhone) : ""}`;
+              return (
+                <option key={m.memNum} value={m.memNum} title={label}>
+                  {label}
+                </option>
+              );
+            })}
           </Form.Select>
         </Col>
         <Col md={6}>
@@ -206,7 +225,7 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
 }
 
 /* ============================================================= */
-/* 🔵 휴가 탭 */
+/* 휴가 탭 */
 function VacationTab({ empNum, empName, onSaved, editData, selectedDate }) {
   const [form, setForm] = useState({
     empNum: empNum || "",
@@ -241,19 +260,19 @@ function VacationTab({ empNum, empName, onSaved, editData, selectedDate }) {
       endTime: `${form.endDate}T23:59`,
       memo: form.reason,
     };
-    console.log("📦 [VACATION payload 확인]", payload);
+    console.log("[VACATION payload 확인]", payload);
 
     try {
       if (editData && editData.codeBid === "VACATION") {
         await axios.put("http://localhost:9000/v1/schedule/update", payload);
-        alert("✅ 휴가 일정이 수정되었습니다.");
+        alert("휴가 일정이 수정되었습니다.");
       } else {
         await axios.post("http://localhost:9000/v1/schedule/add", payload);
-        alert("✅ 휴가 일정이 등록되었습니다.");
+        alert("휴가 일정이 등록되었습니다.");
       }
       onSaved?.(payload);
     } catch (err) {
-      console.error("❌ 휴가 일정 등록 실패:", err);
+      console.error("휴가 일정 등록 실패:", err);
     }
   };
 
@@ -288,7 +307,7 @@ function VacationTab({ empNum, empName, onSaved, editData, selectedDate }) {
 }
 
 /* ============================================================= */
-/* 🟣 기타 탭 */
+/* 기타 탭 */
 function EtcTab({ empNum, empName, onSaved, editData, selectedDate }) {
   const [scheduleCodes, setScheduleCodes] = useState([]);
   const [form, setForm] = useState({
@@ -317,10 +336,23 @@ function EtcTab({ empNum, empName, onSaved, editData, selectedDate }) {
     axios
       .get("http://localhost:9000/v1/schedule-types")
       .then((res) => {
-        const etc = res.data.filter((c) => c.codeBId.startsWith("ETC"));
+        // ETC만 필터링하고 한글명 추가
+        const nameMap = {
+          "ETC-COMPETITION": "대회",
+          "ETC-COUNSEL": "상담",
+          "ETC-MEETING": "회의",
+        };
+
+        const etc = res.data
+          .filter((c) => c.codeBId.startsWith("ETC"))
+          .map((c) => ({
+            ...c,
+            displayName: nameMap[c.codeBId] || c.codeBName || c.codeBId,
+          }));
+        console.log("[ETC 코드 변환 결과]", etc);
         setScheduleCodes(etc);
       })
-      .catch((err) => console.error("❌ 일정유형 코드 불러오기 실패:", err));
+      .catch((err) => console.error("일정유형 코드 불러오기 실패:", err));
   }, [empNum, empName, editData, selectedDate]);
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -335,19 +367,19 @@ function EtcTab({ empNum, empName, onSaved, editData, selectedDate }) {
       endTime: `${form.endDate}T23:59`,
       memo: form.memo,
     };
-    console.log("📦 [ETC payload 확인]", payload);
+    console.log("[ETC payload 확인]", payload);
 
     try {
       if (editData && editData.codeBid?.startsWith("ETC")) {
         await axios.put("http://localhost:9000/v1/schedule/update", payload);
-        alert("✅ 기타 일정이 수정되었습니다.");
+        alert("기타 일정이 수정되었습니다.");
       } else {
         await axios.post("http://localhost:9000/v1/schedule/add", payload);
-        alert("✅ 기타 일정이 등록되었습니다.");
+        alert("기타 일정이 등록되었습니다.");
       }
       onSaved?.(payload);
     } catch (err) {
-      console.error("❌ 기타 일정 등록 실패:", err);
+      console.error("기타 일정 등록 실패:", err);
     }
   };
 
@@ -364,7 +396,7 @@ function EtcTab({ empNum, empName, onSaved, editData, selectedDate }) {
             <option value="">선택</option>
             {scheduleCodes.map((c) => (
               <option key={c.codeBId} value={c.codeBId}>
-                {c.codeBName}
+                {c.displayName}
               </option>
             ))}
           </Form.Select>

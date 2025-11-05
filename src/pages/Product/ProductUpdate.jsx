@@ -47,10 +47,11 @@ const createDefaultValues = () => ({
 });
 
 function ProductUpdate() {
-  const { productId, serviceId } = useParams();
+  const { itemType, itemId } = useParams();
   const navigate = useNavigate();
 
-  const isServiceRoute = Boolean(serviceId);
+  const normalizedType = itemType?.toUpperCase() === 'SERVICE' ? 'SERVICE' : 'PRODUCT';
+  const isServiceRoute = normalizedType === 'SERVICE';
   const initialDefaults = useMemo(() => {
     const base = createDefaultValues();
     return isServiceRoute ? { ...base, productType: 'SERVICE' } : base;
@@ -61,10 +62,10 @@ function ProductUpdate() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const isProduct = !isServiceRoute;
-  const isService = isServiceRoute;
-  const codeAId = isProduct ? 'PRODUCT' : 'SERVICE';
-  const targetId = isServiceRoute ? serviceId : productId;
+  const isProduct = normalizedType === 'PRODUCT';
+  const isService = normalizedType === 'SERVICE';
+  const codeAId = normalizedType;
+  const targetId = itemId;
   const isPtService = isService && values.categoryCode === 'PT';
   const isMembershipService = isService && values.categoryCode === 'MEMBERSHIP';
 
@@ -156,7 +157,7 @@ function ProductUpdate() {
     return () => {
       mounted = false;
     };
-  }, [targetId, isServiceRoute, navigate]);
+  }, [targetId, isServiceRoute, navigate, normalizedType]);
 
     // 탭 전환 시 서비스 전용 필드를 비워줍니다.
   const handleTabChange = () => {
@@ -222,9 +223,9 @@ function ProductUpdate() {
         await axios.put(`/v1/product/${targetId}`, productPayload);
         alert('상품 정보가 수정되었습니다.');
       } else {
-        const numericServiceId = Number(serviceId);
+        const numericTargetId = Number(targetId);
         const servicePayload = {
-          serviceId: numericServiceId,
+          serviceId: numericTargetId,
           codeBId: values.categoryCode,
           name: values.serviceName,
           price: Number(values.salePrice || 0),
@@ -235,7 +236,7 @@ function ProductUpdate() {
           ),
         };
 
-        await axios.put(`/v1/service/${numericServiceId}`, servicePayload);
+        await axios.put(`/v1/service/${numericTargetId}`, servicePayload);
         alert('서비스 정보가 수정되었습니다.');
       }
       navigate('/product');

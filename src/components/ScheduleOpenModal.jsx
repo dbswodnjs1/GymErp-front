@@ -4,13 +4,16 @@ import { Modal, Button, ListGroup, Badge } from "react-bootstrap";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import axios from "axios";
+import "./css/ScheduleOpenModal.css";
+
 
 // 타입별 표시(라벨/색)
 const typeMeta = {
-  "SCHEDULE-PT": { label: "PT",    variant: "success" }, // 초록
-  "VACATION":     { label: "휴가",  variant: "danger"  }, // 빨강
-  // ETC-* 는 전부 기타로
-  "ETC":          { label: "기타",  variant: "warning" }, // 노랑
+  "SCHEDULE-PT":     { label: "PT", variant: "success" },   // 초록
+  "ETC-VACATION":    { label: "휴가", variant: "danger" },  // 빨강
+  "ETC-COUNSEL":     { label: "상담", variant: "orange" }, // 노랑
+  "ETC-MEETING":     { label: "회의", variant: "navy" }, // 남색
+  "ETC-COMPETITION": { label: "대회", variant: "purple" },  // 보라 (커스텀)
 };
 
 export default function ScheduleOpenModal({
@@ -33,9 +36,8 @@ export default function ScheduleOpenModal({
   const fmtTime = (d) => format(new Date(d), "HH:mm");
 
   const metaOf = (codeBid = "") => {
-    if (codeBid === "SCHEDULE-PT") return typeMeta["SCHEDULE-PT"];
-    if (codeBid === "VACATION") return typeMeta["VACATION"];
-    if (codeBid.startsWith?.("ETC")) return typeMeta["ETC"];
+    if (typeMeta[codeBid]) return typeMeta[codeBid];
+    if (codeBid.startsWith?.("ETC")) return { label: "기타", variant: "warning" };
     return { label: "기타", variant: "secondary" };
   };
 
@@ -81,7 +83,22 @@ const titleLine = (ev) => {
                   key={ev.shNum ?? ev.id}
                   className="d-flex align-items-start gap-3"
                 >
-                  <Badge bg={m.variant} className="mt-1">
+                  <Badge
+                    bg={
+                      !["purple", "navy", "orange"].includes(m.variant)
+                        ? m.variant
+                        : undefined
+                    }
+                    className={`mt-1 ${
+                      m.variant === "purple"
+                        ? "badge-purple"
+                        : m.variant === "navy"
+                        ? "badge-navy"
+                        : m.variant === "orange"
+                        ? "badge-orange"
+                        : ""
+                    }`}
+                  >
                     {m.label}
                   </Badge>
 

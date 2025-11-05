@@ -1,20 +1,18 @@
-// src/components/icons/GymLinkLogo.jsx
-import React from "react";
-
 export default function GymLinkLogo({
-  width = 220,
-  colorStart = "#1e3a8a", // Deep navy blue (#1e3a8a)
-  colorEnd = "#0f172a",   // Almost black-blue (#0f172a)
+  width = 140, // ✅ 기본 크기를 140으로 줄임 (헤더용)
+  colorStart = "#1e3a8a",
+  colorEnd = "#0f172a",
 }) {
   return (
     <svg
       width={width}
       height={width * 0.32}
-      viewBox="0 0 600 200"
+      viewBox="0 0 600 200"     // ✅ 뷰박스를 600x200 정도로 키워서 비율 유지
       xmlns="http://www.w3.org/2000/svg"
       style={{
         verticalAlign: "middle",
-        filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.3))",
+        filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
+        display: "block",
       }}
     >
       <defs>
@@ -28,7 +26,7 @@ export default function GymLinkLogo({
         x="50%"
         y="68%"
         textAnchor="middle"
-        fontSize="92"
+        fontSize="120"
         fontWeight="900"
         letterSpacing="5"
         fill="url(#gymlinkGradient)"
