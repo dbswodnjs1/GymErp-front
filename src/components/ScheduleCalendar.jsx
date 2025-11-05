@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+// src/components/ScheduleCalendar.jsx
+import React, { useEffect,useState } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { ko } from "date-fns/locale";
 import ScheduleOpenModal from "./ScheduleOpenModal";
+import CustomToolbar from "./CustomToolbar"; // ★ 외부 툴바 사용
 import "bootstrap/dist/css/bootstrap.min.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "../components/css/ScheduleCalendar.css";
@@ -16,10 +18,28 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-function ScheduleCalendar({ events, onSelectSlot, onSelectEvent }) {
+function ScheduleCalendar({ events, onSelectSlot, onSelectEvent, isAdmin = false,focusDate }) {
   const [currentView, setCurrentView] = useState("month");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [more, setMore] = useState({ show: false, date: null, events: [] });
+
+
+  // 🔎 검색 결과로 넘어온 특정 날짜에 포커스
+  useEffect(() => {
+    if (focusDate instanceof Date && !Number.isNaN(focusDate)) {
+      setCurrentDate(focusDate);
+    }
+  }, [focusDate]);
+
+  // 관리자 테스트 클릭
+  const handleAdminTest = () => {
+    alert("관리자 테스트 버튼 클릭!");
+  };
+
+  // 툴바에 isAdmin/핸들러 주입
+  const Toolbar = (props) => (
+    <CustomToolbar {...props} isAdmin={isAdmin} onAdminTest={handleAdminTest} />
+  );
 
   return (
     <>
@@ -44,7 +64,7 @@ function ScheduleCalendar({ events, onSelectSlot, onSelectEvent }) {
         onView={(view) => setCurrentView(view)}
         date={currentDate}
         onNavigate={(newDate) => setCurrentDate(newDate)}
-        components={{ toolbar: CustomToolbar }}
+        components={{ toolbar: Toolbar }}  // ★ 외부 툴바 + isAdmin 주입
         views={["month", "week", "day"]}
         defaultView="month"
         popup={false}
@@ -62,6 +82,7 @@ function ScheduleCalendar({ events, onSelectSlot, onSelectEvent }) {
     </>
   );
 }
+
 
 function CustomToolbar({ label, onNavigate, onView }) {
   return (
@@ -94,3 +115,4 @@ function CustomToolbar({ label, onNavigate, onView }) {
 }
 
 export default ScheduleCalendar;
+

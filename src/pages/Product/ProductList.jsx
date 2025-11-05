@@ -18,6 +18,11 @@ function ProductList() {
         endPageNum: 1,
         totalPageCount: 1
     });
+    //정렬 state
+    const [sortConfig, setSortConfig] = useState({ 
+        key: 'codeBName', // 백엔드 @RequestParam 기본값과 일치
+        direction: 'ASC' // 백엔드 @RequestParam 기본값과 일치
+    });
 
     const productColumns = [
         { key: 'codeBName', label: '상품 구분' },
@@ -47,23 +52,44 @@ function ProductList() {
         categoryCodes.forEach(cat => {
             qs.append('categoryCodes', cat);
         });
+        qs.set("sortBy", sortConfig.key);
+        qs.set("direction", sortConfig.direction);
 
         const apiEndpoint = (currentTab === 'PRODUCT') ? '/v1/product' : '/v1/service';
     
         axios.get(`${apiEndpoint}?${qs.toString()}`)
-            .then(res => {
-                setPageInfo(res.data);
-                
-            })
-            .catch(err => {                                                                                 
-             if (err.response) {                                                                         
-                 console.error('Error response from server:', err.response.data);                        
-             }                                                                                           
-             console.error('Axios error:', err);                                                         
+        .then(res => {
+            setPageInfo(res.data);
+            
+        })
+        .catch(err => {                                                                                 
+            if (err.response) {                                                                         
+                console.error('Error response from server:', err.response.data);                        
+            }                                                                                           
+            console.error('Axios error:', err);                                                         
          }); 
         
 
-    }, [params, currentTab]);
+    }, [params, currentTab, sortConfig]);
+
+    const handleSort = (key) => {
+        setSortConfig(prevConfig => {
+            // 다른 컬럼 클릭 시
+            if (prevConfig.key !== key) {
+                return { key: key, direction: 'DESC' };
+            }
+            // 같은 컬럼 클릭 시 (ASC -> DESC -> ASC)
+            if (prevConfig.direction === 'DESC') {
+                return { key: key, direction: 'ASC' };
+            }
+            return { key: key, direction: 'DESC' };
+        });
+
+        // 정렬 시 1페이지로 이동
+        const qs = new URLSearchParams(params);
+        qs.set("pageNum", "1");
+        navigate(`/product?${qs.toString()}`); // (경로는 현재 페이지에 맞게)
+    };
 
     const handleTabChange = (tab) => {
         setCurrentTab(tab);
@@ -185,7 +211,8 @@ function ProductList() {
                         onPageChange={pageMove}
                         onToggleChange={handleStatusChange}
                         columns={productColumns}
-                        onRowClick={handleRowClick}
+                        onSort={handleSort}
+                        sortConfig={sortConfig}
                     />
                 </div>
             </div>

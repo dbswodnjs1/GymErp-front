@@ -1,244 +1,345 @@
 // src/pages/EmpAttendance/myAttendance.jsx
-import { useEffect, useMemo, useState } from "react";
-import { Alert, Button, Table } from "react-bootstrap";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { Alert, Button, Table, Badge } from "react-bootstrap";
 import axios from "axios";
+import "bootstrap-icons/font/bootstrap-icons.css";
+import "./attendance.css";
 
-function EmpAttendanceMy() {
-  //myEmpNum은 로컬스토리지나 인증 컨텍스트에서 가져와야 함 하단은 테스트용으로 3고정값 넣음
-  const myEmpNum = 3; // 임의 고정
+/*
+ *  - 컨트롤러 base: /v1
+ *  - 프론트 호출: /api/v1/*
+ *  - 쿠키/세션: withCredentials=true
+ */
+const api = axios.create({
+  baseURL: "/api/v1",
+  withCredentials: true,
+});
+
+// ---- 유틸 ----
+// 달력용
+const msPerDay = 24 * 60 * 60 * 1000;
+const toLocalDate = (ymdStr) => {
+  if (!ymdStr) return null;
+  // 로컬 기준 00:00으로 파싱
+  const [y, m, d] = ymdStr.split("-").map(Number);
+  return new Date(y, m - 1, d, 0, 0, 0, 0);
+};
+
+
+
+const toYmd = (d) => {
+  const yy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+};
+const parse = (s) => {
+  if (!s) return null;
+  const d = new Date(String(s).trim().replace(" ", "T"));
+  return isNaN(d) ? null : d;
+};
+const fmtTime = (s) => {
+  const d = parse(s);
+  if (!d) return "—";
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  const ss = String(d.getSeconds()).padStart(2, "0");
+  return `${hh}:${mm}:${ss}`;
+};
+const fmtDur = (sec) => {
+  if (sec == null) return "—";
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  return `${h}h ${m}m`;
+};
+const initial = (name) => (name ? name.trim()[0] : "?");
+
+// ===============================
+export default function EmpAttendanceMy() {
+  // ✅ 로그인 사번: 
+  const myEmpNum = (() => {
+    try {
+      const raw = sessionStorage.getItem("user");
+      if (raw) {
+        const u = JSON.parse(raw);
+        const n = Number(u?.empNum);
+        if (Number.isFinite(n) && n > 0) return n;
+      }
+    } catch { }
+    const n =
+      Number(localStorage.getItem("empNum")) ||
+      Number(sessionStorage.getItem("empNum"));
+    return Number.isFinite(n) && n > 0 ? n : null;
+  })();
+
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  // ---- 시간 유틸(로컬/KST 기준 포맷) ----
-  const toDate = (s) => {
-    if (!s) return null;
-    const str = String(s).trim().replace(" ", "T"); // 'YYYY-MM-DD HH:mm:ss' 대응
-    const d = new Date(str);
-    return isNaN(d) ? null : d;
-  };
-  const fmtTimeOnly = (s) => {
-    const d = toDate(s);
-    if (!d) return "";
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    const ss = String(d.getSeconds()).padStart(2, "0");
-    return `${hh}:${mm}:${ss}`;
-  };
-  const fmtDateOnly = (s) => {
-    const d = toDate(s);
-    if (!d) return "";
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  };
-  const fmtDur = (sec) => {
-    if (sec == null) return "";
-    const h = Math.floor(sec / 3600);
-    const m = Math.floor((sec % 3600) / 60);
-    return `${h}h ${m}m`;
-  };
+  // 날짜 페이지(0=오늘)
+  const [pageOffset, setPageOffset] = useState(0);
+  const targetDate = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + pageOffset);
+    return d;
+  }, [pageOffset]);
+  const ymd = useMemo(() => toYmd(targetDate), [targetDate]);
 
-  // ---- API ----
-  const fetchList = async () => {
-    if (!myEmpNum) {
-      setError("내 empNum이 없습니다. localStorage에 empNum을 저장해주세요.");
-      return;
-    }
+  // 하루치(전직원) 조회
+  const fetchDaily = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
-      const { data } = await axios.get("/api/v1/attendance", {
-        params: { empNum: myEmpNum },
-      });
+      const { data } = await api.get(`/attendance`, { params: { date: ymd } });
       setRows(Array.isArray(data) ? data : []);
     } catch (e) {
+      setRows([]);
+      console.error("fetchDaily error", e?.response || e);
       setError(e.response?.data?.message || e.message || "목록 조회 실패");
     } finally {
       setLoading(false);
     }
-  };
+  }, [ymd]);
 
-  useEffect(() => {
-    fetchList();
-  }, []);
+  useEffect(() => { fetchDaily(); }, [fetchDaily]);
 
-  // 오늘 출근(퇴근 전) 레코드
+  // 오늘 내 미퇴근 레코드(가장 최근 출근 1건)
   const openToday = useMemo(() => {
-    const now = new Date();
-    const ty = now.getFullYear(),
-      tm = now.getMonth(),
-      td = now.getDate();
-    return rows.find((r) => {
+    if (pageOffset !== 0 || !myEmpNum) return null;
+    const mine = rows.filter((r) => r.empNum === myEmpNum);
+    const candidates = mine.filter((r) => {
       const base = r.attDate || r.checkIn || r.startedAt;
-      const d = toDate(base);
-      const sameDay = d && d.getFullYear() === ty && d.getMonth() === tm && d.getDate() === td;
-      const notOut = !r.checkOut;
-      return sameDay && notOut;
+      if (!base) return false;
+      const d = new Date(String(base).replace(" ", "T"));
+      const dYmd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      return dYmd === ymd && !r.checkOut && !r.endedAt;
     });
-  }, [rows]);
+    if (candidates.length === 0) return null;
+    candidates.sort((a, b) => {
+      const ta = parse(a.checkIn || a.startedAt)?.getTime() ?? 0;
+      const tb = parse(b.checkIn || b.startedAt)?.getTime() ?? 0;
+      return tb - ta;
+    });
+    return candidates[0];
+  }, [rows, myEmpNum, pageOffset, ymd]);
 
+  // ✅ 출근: 서버가 인증 사용자로 처리 → 바디 전송 없음
   const handleCheckIn = async () => {
-    if (!myEmpNum) return;
+    if (pageOffset !== 0) return;
     try {
       setLoading(true);
       setError("");
-      await axios.post("/api/v1/attendance", { empNum: myEmpNum });
-      setMessage("출근 처리했습니다");
-      await fetchList();
+      await api.post(`/attendance`);
+      setMessage("출근 처리했습니다.");
+      await fetchDaily();
     } catch (e) {
+      console.error("checkIn error", e?.response || e);
       setError(e.response?.data?.message || e.message || "출근 처리 실패");
     } finally {
       setLoading(false);
     }
   };
 
+  // 퇴근
   const handleCheckOut = async () => {
     if (!openToday) return;
     const attNum = openToday.attNum ?? openToday.id ?? openToday.num;
+    if (!attNum) return setError("퇴근 처리용 attNum이 없습니다.");
     try {
       setLoading(true);
       setError("");
-      await axios.put(`/api/v1/attendance/${attNum}/checkout`);
-      setMessage("퇴근 처리했습니다");
-      await fetchList();
+      await api.put(`/attendance/${attNum}/checkout`);
+      setMessage("퇴근 처리했습니다.");
+      await fetchDaily();
     } catch (e) {
+      console.error("checkOut error", e?.response || e);
       setError(e.response?.data?.message || e.message || "퇴근 처리 실패");
     } finally {
       setLoading(false);
     }
   };
 
+  // 화면용 가공 + 통계
+  const viewRows = useMemo(
+    () =>
+      rows
+        .map((r) => ({
+          ...r,
+          _name: r.empName || String(r.empNum ?? ""),
+          _start: r.checkIn ?? r.startedAt,
+          _end: r.checkOut ?? r.endedAt,
+          _dur: r.workHours ?? r.duration ?? r.durationS ?? r.durationSec,
+        }))
+        .sort((a, b) => {
+          const n = a._name.localeCompare(b._name, "ko");
+          if (n !== 0) return n;
+          const ta = parse(a._start)?.getTime() ?? 0;
+          const tb = parse(b._start)?.getTime() ?? 0;
+          return ta - tb;
+        }),
+    [rows]
+  );
+
+  const totalCount = viewRows.length;
+  const workingCount = viewRows.filter((r) => !r._end).length;
+
+  const goPrev = () => setPageOffset((v) => v - 1);
+  const goNext = () => setPageOffset((v) => v + 1);
+  const goToday = () => setPageOffset(0);
+
+
+  // ------- 달력용 추가 
+
+  // 컴포넌트 내부에 추가
+  const [pickedYmd, setPickedYmd] = useState(ymd);
+
+  // ymd가 바뀌면 달력 입력값도 동기화
+  useEffect(() => { setPickedYmd(ymd); }, [ymd]);
+
+  // 특정 날짜로 이동
+  const goDate = (dateYmd) => {
+    if (!dateYmd) return;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = toLocalDate(dateYmd);
+    if (!target) return;
+    const diff = Math.round((target.getTime() - today.getTime()) / msPerDay);
+    setPageOffset(diff);
+  };
+
   return (
     <>
-      {message && (
-        <Alert
-          variant="success"
-          onClose={() => setMessage("")}
-          dismissible
-          className="mt-3"
-        >
-          {message}
-        </Alert>
-      )}
-      {error && (
-        <Alert
-          variant="danger"
-          onClose={() => setError("")}
-          dismissible
-          className="mt-3"
-        >
-          {error}
-        </Alert>
-      )}
+      {message && <Alert variant="success" onClose={() => setMessage("")} dismissible className="mt-3">{message}</Alert>}
+      {error && <Alert variant="danger" onClose={() => setError("")} dismissible className="mt-3">{error}</Alert>}
 
-      <h1 className="mt-3">내 출퇴근</h1>
-
-      {/* 상단 컨트롤 */}
-      <div className="my-3 d-flex gap-2">
-        <Button
-          variant={openToday ? "secondary" : "success"}
-          disabled={loading || !!openToday || !myEmpNum}
-          onClick={handleCheckIn}
-        >
-          출근
-        </Button>
-        <Button
-          variant="danger"
-          disabled={!openToday || loading || !myEmpNum}
-          onClick={handleCheckOut}
-        >
-          퇴근
-        </Button>
-        <Button
-          variant="outline-secondary"
-          disabled={loading || !myEmpNum}
-          onClick={fetchList}
-        >
-          새로고침
-        </Button>
+      {/* 히어로 배너 */}
+      <div className="att-hero mt-3">
+        <div className="att-hero__left">
+          <div className="att-hero__title">
+            <i className="bi bi-clock-history me-2"></i>
+            출퇴근(하루 단위 · 전직원)
+          </div>
+          <div className="att-hero__meta">
+            <Badge bg="light" text="dark" className="me-2">
+              <i className="bi bi-calendar3 me-1"></i>{ymd}
+            </Badge>
+            <Badge bg="primary" className="me-2">총 {totalCount}건</Badge>
+            <Badge bg={workingCount > 0 ? "danger" : "success"}>
+              {workingCount > 0 ? `미퇴근 ${workingCount}` : "모두 퇴근"}
+            </Badge>
+          </div>
+          <div className="att-hero__actions">
+            <Button
+              size="sm"
+              variant={openToday ? "secondary" : "success"}
+              disabled={loading || pageOffset !== 0 || !!openToday}
+              onClick={handleCheckIn}
+            >
+              <i className="bi bi-door-open me-1" /> 출근
+            </Button>
+            <Button
+              size="sm"
+              variant="danger"
+              className="ms-2"
+              disabled={loading || pageOffset !== 0 || !openToday}
+              onClick={handleCheckOut}
+            >
+              <i className="bi bi-door-closed me-1" /> 퇴근
+            </Button>
+            <Button size="sm" variant="outline-light" className="ms-2" disabled={loading} onClick={fetchDaily}>
+              <i className="bi bi-arrow-clockwise me-1" /> 새로고침
+            </Button>
+          </div>
+        </div>
+        <div className="att-hero__right">
+          <div className="att-illo">
+            <i className="bi bi-smartwatch" />
+          </div>
+        </div>
       </div>
 
-      {/* 오늘 요약 */}
-      <div className="p-3 border rounded-3 mb-3">
-        <div className="fw-semibold mb-2">오늘 요약</div>
+      {/* 내 기록 요약(오늘만) */}
+      <div className="att-card mt-3">
+        <div className="d-flex align-items-center justify-content-between">
+          <div className="fw-semibold">
+            <i className="bi bi-person-badge me-2"></i>내 기록 요약 <span className="text-muted">({ymd})</span>
+          </div>
+          <div className="att-pager">
+            <button className="page-link" onClick={() => setPageOffset((v) => v - 7)}>&laquo;</button>
+            <button className="page-link" onClick={goPrev}>&lt;</button>
+            <span className="page-link disabled">{ymd}</span>
+            <button className="page-link" onClick={goNext}>&gt;</button>
+            <button className={`page-link ${pageOffset === 0 ? "disabled" : ""}`} onClick={goToday}>오늘</button>
+            <button className="page-link" onClick={() => setPageOffset((v) => v + 7)}>&raquo;</button>
+
+            {/* ⬇ 추가: 날짜 직접 선택 */}
+            <input
+              type="date"
+              className="form-control form-control-sm ms-2"
+              value={pickedYmd}
+              onChange={(e) => {
+                const v = e.target.value;
+                setPickedYmd(v);
+                goDate(v);
+              }}
+              aria-label="날짜 선택"
+            />
+          </div>
+        </div>
+
         {openToday ? (
-          <div className="d-flex flex-wrap gap-4">
-            <div>
-              <span className="text-muted me-2">날짜</span>
-              {fmtDateOnly(openToday.attDate || openToday.checkIn)}
-            </div>
-            <div>
-              <span className="text-muted me-2">출근</span>
-              {fmtTimeOnly(openToday.checkIn)}
-            </div>
-            <div>
-              <span className="text-muted me-2">퇴근</span>
-              {openToday.checkOut ? fmtTimeOnly(openToday.checkOut) : "미퇴근"}
-            </div>
+          <div className="att-summary">
+            <div><span className="text-muted me-2">출근</span>{fmtTime(openToday.checkIn || openToday.startedAt)}</div>
+            <div><span className="text-muted me-2">퇴근</span>{openToday.checkOut || openToday.endedAt ? fmtTime(openToday.checkOut || openToday.endedAt) : <span className="badge text-bg-danger">미퇴근</span>}</div>
             <div>
               <span className="text-muted me-2">상태</span>
-              <span
-                className={`badge ${
-                  openToday.checkOut ? "text-bg-secondary" : "text-bg-success"
-                }`}
-              >
-                {openToday.checkOut ? "근무 종료" : "근무 중"}
-
+              <span className={`badge ${openToday.checkOut || openToday.endedAt ? "text-bg-secondary" : "text-bg-success"}`}>
+                {openToday.checkOut || openToday.endedAt ? "근무 종료" : "근무 중"}
               </span>
             </div>
           </div>
         ) : (
-          <div className="text-muted">오늘 출근 기록 없음</div>
+          <div className="text-muted">오늘 내 출근 기록 없음</div>
         )}
       </div>
 
-
-      {/* 최근 기록 테이블 */}
-      <Table bordered hover size="sm" className="align-middle">
-        <thead>
-          <tr>
-            <th style={{ width: 110 }}>일자</th>
-            <th>출근</th>
-            <th>퇴근</th>
-            <th style={{ width: 120 }}>근무시간</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 && (
+      {/* 리스트 a*/}
+      <div className="att-table mt-3">
+        <Table hover responsive className="mb-0">
+          <thead>
             <tr>
-              <td colSpan={4} className="text-center text-muted py-4">
-                데이터 없음
-              </td>
+              <th style={{ width: 260 }}>직원</th>
+              <th>출근</th>
+              <th>퇴근</th>
+              <th style={{ width: 140 }}>근무시간</th>
             </tr>
-          )}
-          {rows.map((r) => {
-            const attDate = fmtDateOnly(r.attDate || r.checkIn || r.startedAt);
-            const started = r.checkIn ?? r.startedAt;
-            const ended = r.checkOut ?? r.endedAt;
-            const duration = r.workHours ?? r.duration ?? r.durationS ?? r.durationSec;
-            const key = r.attNum ?? r.id ?? `${started}-${ended}`;
-            return (
-              <tr key={key}>
-                <td>{attDate}</td>
-                <td>{fmtTimeOnly(started)}</td>
-                <td>
-                  {ended ? (
-                    fmtTimeOnly(ended)
-                  ) : (
-                    <span className="text-danger">미퇴근</span>
-                  )}
-                </td>
-                <td>{duration != null ? fmtDur(duration) : ended ? "-" : ""}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </Table>
+          </thead>
+          <tbody>
+            {viewRows.length === 0 ? (
+              <tr><td colSpan={4} className="text-center text-muted py-4">데이터 없음</td></tr>
+            ) : (
+              viewRows.map((r, idx) => {
+                const key = r.attNum ?? r.id ?? `${r.empNum}-${r._start}-${r._end}-${idx}`;
+                const isMine = myEmpNum && r.empNum === myEmpNum;
+                return (
+                  <tr key={key} className={isMine ? "table-primary" : ""}>
+                    <td className="d-flex align-items-center gap-2">
+                      <div className="att-avatar">{initial(r._name)}</div>
+                      <div className="fw-semibold">{r._name}</div>
+                      {!r._end && <span className="badge rounded-pill text-bg-danger ms-2">미퇴근</span>}
+                    </td>
+                    <td>{fmtTime(r._start)}</td>
+                    <td>{r._end ? fmtTime(r._end) : <span className="text-danger">—</span>}</td>
+                    <td>{r._dur != null ? fmtDur(r._dur) : (r._end ? "—" : "")}</td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </Table>
+      </div>
     </>
   );
 }
-
-export default EmpAttendanceMy;

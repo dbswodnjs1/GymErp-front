@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { NavLink, useNavigate, useSearchParams } from 'react-router-dom';
 import CategoryCheckbox from '../../components/CategoryCheckbox';
 import ProductSearchBar from '../../components/ProductSearchBar';
 import ProductListComponent from '../../components/ProductListComponent';
 import axios from 'axios';
+import Pagination from '../../components/Pagination';
 
 function StockList() {
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [search, setSearch] = useState({ keyword: "" });
+    const [selectedItemId, setSelectedItemId] = useState(null);
     const [pageInfo, setPageInfo] = useState({
         list: [],
         pageNum: 1,
@@ -15,6 +17,27 @@ function StockList() {
         endPageNum: 1,
         totalPageCount: 1
     });
+    const [inboundPageInfo, setInboundPageInfo] = useState({
+        list: [],
+        pageNum: 1,
+        totalPageCount: 1
+    });
+    const [outboundPageInfo, setOutboundPageInfo] = useState({
+        list: [],
+        pageNum: 1,
+        totalPageCount: 1
+    });
+    //정렬 state
+    const [sortConfig, setSortConfig] = useState({ 
+        key: 'codeBName', // 백엔드 @RequestParam 기본값과 일치
+        direction: 'ASC' // 백엔드 @RequestParam 기본값과 일치
+    });
+    //날짜 state
+    const [filterDetails, setFilterDetails] = useState({
+        startDate: '',
+        endDate: ''
+    });
+
 
     const productColumns = [
         { key: 'codeBName', label: '상품 구분' },
@@ -25,6 +48,7 @@ function StockList() {
     const [params] = useSearchParams();
     const navigate = useNavigate();
 
+    //상품 목록 가져오기
     useEffect(()=>{
         const pageNum = params.get("pageNum") || 1;
         const keyword = params.get("keyword") || "";
@@ -42,13 +66,81 @@ function StockList() {
         categoryCodes.forEach(cat => {
             qs.append('categoryCodes', cat);
         });
+        qs.set("sortBy", sortConfig.key);
+        qs.set("direction", sortConfig.direction);
 
         axios.get(`/v1/product?${qs.toString()}`)
             .then(res=>{
                 setPageInfo(res.data);
+                // 목록을 불러온 직후, 그리고 아직 아무것도 선택되지 않았을 때
+                if (res.data.list.length > 0 && selectedItemId === null) {
+                    // 목록의 "첫 번째 아이템 ID"로 selectedItemId를 설정
+                    setSelectedItemId(res.data.list[0].productId); 
+                }
             })
             .catch(err=>console.log(err));
-    },[params]);
+
+    },[params, sortConfig]);
+
+    //입고 내역 가져오기
+    useEffect(()=>{
+        const page = params.get("inboundPage") || 1;
+        const qs = new URLSearchParams();
+        qs.set("inboundPage", page.toString());
+        if (filterDetails.startDate) {
+            qs.set("startDate", filterDetails.startDate);
+        }
+        if (filterDetails.endDate) {
+            qs.set("endDate", filterDetails.endDate);
+        }
+        if(selectedItemId){
+            const url = `/v1/stock/${selectedItemId}/inbound?${qs.toString()}`;
+            axios.get(url)
+            .then(res=>{
+                setInboundPageInfo(res.data);
+            })
+        }
+        
+    },[params, selectedItemId, filterDetails]);
+
+    //출고 내역 가져오기
+    useEffect(()=>{
+        const page = params.get("outboundPage") || 1;
+        const qs = new URLSearchParams();
+        qs.set("outboundPage", page.toString());
+        if (filterDetails.startDate) {
+            qs.set("startDate", filterDetails.startDate);
+        }
+        if (filterDetails.endDate) {
+            qs.set("endDate", filterDetails.endDate);
+        }
+        if(selectedItemId){
+            const url = `/v1/stock/${selectedItemId}/outbound?${qs.toString()}`;
+            axios.get(url)
+            .then(res=>{
+                setOutboundPageInfo(res.data);
+            })
+        }
+    },[params, selectedItemId, filterDetails]);
+
+    const handleSort = (key) => {
+        setSortConfig(prevConfig => {
+            // 다른 컬럼 클릭 시
+            if (prevConfig.key !== key) {
+                return { key: key, direction: 'DESC' };
+            }
+            // 같은 컬럼 클릭 시 (ASC -> DESC -> ASC)
+            if (prevConfig.direction === 'DESC') {
+                return { key: key, direction: 'ASC' };
+            }
+            return { key: key, direction: 'DESC' };
+        });
+
+        // 정렬 시 1페이지로 이동
+        const qs = new URLSearchParams(params);
+        qs.set("pageNum", "1");
+        navigate({ search: qs.toString() }); // (경로는 현재 페이지에 맞게)
+    };
 
     const handleCategoryChange = (newCategories) => {
         const qs = new URLSearchParams();
@@ -78,10 +170,34 @@ function StockList() {
         navigate(`/stock?${qs.toString()}`);
     };
 
+    const handleRowClick = (item) => {
+        setSelectedItemId(item.productId);
+        const qs = new URLSearchParams(params);
+        qs.set("inboundPage", "1");
+        qs.set("outboundPage", "1");
+        navigate({ search: qs.toString() });
+        setFilterDetails({
+            startDate: '',
+            endDate: ''
+        });
+    };
+
     const pageMove = (num) => {
         const qs = new URLSearchParams(params);
         qs.set("pageNum", num.toString());
         navigate(`/stock?${qs.toString()}`);
+    };
+
+    const inboundPageMove = (num) => {
+        const qs = new URLSearchParams(params);
+        qs.set("inboundPage", num.toString());
+        navigate({ search: qs.toString() });
+    };
+
+    const outboundPageMove = (num) => {
+        const qs = new URLSearchParams(params);
+        qs.set("outboundPage", num.toString());
+        navigate({ search: qs.toString() });
     };
 
     return <>
@@ -100,27 +216,64 @@ function StockList() {
             currentTab={'PRODUCT'}
             onPageChange={pageMove}
             columns={productColumns}
+            onRowClick={handleRowClick}
+            onSort={handleSort}
+            sortConfig={sortConfig}
         />
 
-        <button>입고</button>
-        <table>
-            <thead>
+        <div className="row justify-content-center g-3 align-items-end">
+            <div className="col-md-3">
+                <label htmlFor="startDate" className="form-label">기간 선택</label>
+                <div className="input-group">
+                    <input
+                        type="date"
+                        id="startDate"
+                        className="form-control"
+                        value={filterDetails.startDate}
+                        onChange={(e) =>
+                            setFilterDetails((prev) => ({ ...prev, startDate: e.target.value }))
+                        }
+                    />
+                    <span className="input-group-text">~</span>
+                    <input
+                        type="date"
+                        id="endDate"
+                        className="form-control"
+                        value={filterDetails.endDate}
+                        onChange={(e) =>
+                            setFilterDetails((prev) => ({ ...prev, endDate: e.target.value }))
+                        }
+                    />
+                </div>
+            </div>
+        </div>
+
+        <NavLink to={`/stock/inbound/${selectedItemId}`}>입고</NavLink>
+        <table className="table table-striped text-center">
+            <thead className="table-dark">
                 <tr>
                     <th>날짜</th>
                     <th>수량</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td></td>
-                    <td></td>
+            {inboundPageInfo.list.map(item=>
+                <tr key={item.createdAt}>
+                    <td>{item.createdAt}</td>
+                    <td>{item.quantity}</td>
                 </tr>
+            )}  
             </tbody>
         </table>
+        <Pagination
+            page={inboundPageInfo.pageNum} 
+            totalPage={inboundPageInfo.totalPageCount} 
+            onPageChange={inboundPageMove}
+        />
 
-        <button>출고</button>
-        <table>
-            <thead>
+        <NavLink to={`/stock/outbound/${selectedItemId}`}>출고</NavLink>
+        <table className="table table-striped text-center">
+            <thead className="table-dark">
                 <tr>
                     <th>날짜</th>
                     <th>수량</th>
@@ -128,13 +281,20 @@ function StockList() {
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td></td>
-                    <td></td>
-                    <td></td>
+            {outboundPageInfo.list.map(item=>
+                <tr key={item.createdAt}>
+                    <td>{item.createdAt}</td>
+                    <td>{item.quantity}</td>
+                    <td>{item.notes}</td>
                 </tr>
+            )}
             </tbody>
         </table>
+        <Pagination
+            page={outboundPageInfo.pageNum} 
+            totalPage={outboundPageInfo.totalPageCount} 
+            onPageChange={outboundPageMove}
+        />
     </>
 }
 

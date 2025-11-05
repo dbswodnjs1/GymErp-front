@@ -5,6 +5,7 @@ import EmpModal from "../components/EmpModal";
 import SearchBar from "../components/SearchBar";
 import Pagination from "../components/Pagination";
 import MemberSearchModal from "../components/MemberSearchModal";
+import ScrollBar from "../components/ScrollBar";
 
 
 function EmpList() {
@@ -47,7 +48,9 @@ function EmpList() {
   }, [location.state]);
 
   return (
+    
     <div className="container mt-4">
+      
       {/* 제목 + 검색창 + 등록버튼 */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>직원 목록</h2>
