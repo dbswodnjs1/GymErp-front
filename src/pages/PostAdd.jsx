@@ -7,7 +7,7 @@ export default function PostAdd() {
   const [form, setForm] = useState({
     postTitle: "",
     postContent: "",
-    postWriter: "", // 로그인 사용자 연결 가능
+    postWriter: "관리자", // 로그인 사용자 연결 가능
     postPinned: "N",
   });
 

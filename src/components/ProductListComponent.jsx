@@ -1,7 +1,7 @@
 import React from 'react';
 import Pagination from './Pagination';
 
-function ProductListComponent({ pageInfo, onPageChange, onToggleChange, columns }) {
+function ProductListComponent({ pageInfo, onPageChange, onToggleChange, columns, onRowClick }) {
 
     const renderCell = (item, col) => {
         
@@ -17,6 +17,7 @@ function ProductListComponent({ pageInfo, onPageChange, onToggleChange, columns 
                         id={`switch-${uniqueId}`} // 고유 ID
                         checked={item.isActive} 
                         onChange={onToggleChange ? (e) => onToggleChange(item, e.target.checked) : null}
+                        onClick={(e) => e.stopPropagation()}
                         disabled={!onToggleChange} // onToggleChange가 없으면 비활성화
                     />
                 </div>
@@ -44,8 +45,15 @@ function ProductListComponent({ pageInfo, onPageChange, onToggleChange, columns 
                     </tr>
                 </thead>
                 <tbody>
-                    {pageInfo.list && pageInfo.list.map((item, index) => (
-                        <tr key={item.productId || item.serviceId || index}>
+                    {pageInfo.list && pageInfo.list.map((item, index) => {
+                        const rowId = item.productId || item.serviceId || index;
+                        const clickable = typeof onRowClick === 'function';
+                        return (
+                        <tr
+                            key={rowId}
+                            onClick={clickable ? () => onRowClick(item) : undefined}
+                            style={clickable ? { cursor: 'pointer' } : undefined}
+                        >
                             {/* 부모가 준 'columns' 배열 순서대로 <td>를 동적 생성 */}
                             {columns.map((col) => (
                                 <td key={col.key}>
@@ -54,7 +62,7 @@ function ProductListComponent({ pageInfo, onPageChange, onToggleChange, columns 
                                 </td>
                             ))}
                         </tr>
-                    ))}
+                    )})}
                 </tbody>
             </table>
             <Pagination 

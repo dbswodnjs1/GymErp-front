@@ -34,6 +34,9 @@ function BinaryRadioGroup({
 }) {
   // 라디오가 변경되면 부모에서 내려준 onChange에 name과 값을 넘겨줍니다.
   const handleOptionChange = (event) => {
+    if (disabled) {
+      return;
+    }
     const nextValue = event.target.value;
     if (typeof onChange === 'function') {
       onChange(name, nextValue);

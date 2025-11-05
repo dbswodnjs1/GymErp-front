@@ -1,15 +1,15 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Modal, Tabs, Tab, Button, Row, Col, Form } from "react-bootstrap";
 import axios from "axios";
+import "./css/ScheduleModal.css";
 
 /* ============================================================= */
-/* 🔹 메인 ScheduleModal */
+/* 🧩 메인 ScheduleModal */
 export default function ScheduleModal({
   show,
   defaultTab = "pt",
   empNum,
   empName,
-  onClose,
   onSaved,
   editData,
   selectedDate,
@@ -27,12 +27,11 @@ export default function ScheduleModal({
   const handleSaved = (payload) => {
     console.log("✅ [일정 저장 완료] payload:", payload);
     onSaved?.(payload);
-    onClose?.();
   };
 
   return (
-    <Modal show={show} onHide={onClose} centered backdrop="static" size="lg">
-      <Modal.Header closeButton>
+    <Modal show={show} centered backdrop="static" size="lg">
+      <Modal.Header>
         <Modal.Title>일정 관리</Modal.Title>
       </Modal.Header>
 
@@ -80,7 +79,7 @@ export default function ScheduleModal({
       </Modal.Body>
 
       <Modal.Footer>
-        <Button variant="secondary" onClick={onClose}>
+        <Button variant="secondary" onClick={() => onSaved?.()}>
           닫기
         </Button>
       </Modal.Footer>
@@ -108,8 +107,7 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
 
     if (editData) {
       setForm({
-        // 🔑 수정 모드에서도 select가 제대로 선택되도록 문자열로 변환
-        memNum: editData.memNum != null ? String(editData.memNum) : "",
+        memNum: editData.memNum || "",
         empNum: editData.empNum || empNum,
         empName: editData.empName || empName,
         date: editData.startTime?.slice(0, 10) || selectedDate || "",
@@ -134,12 +132,10 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    const toNum = (v) => (v === "" || v == null ? null : Number(v));
-
     const payload = {
-      shNum: editData?.shNum, // ✅ 일정번호 추가 (수정 모드일 때만 존재)
-      empNum: toNum(form.empNum),
-      memNum: toNum(form.memNum),
+      shNum: editData?.shNum,
+      empNum: form.empNum,
+      memNum: form.memNum,
       codeBid: "SCHEDULE-PT",
       startTime: `${form.date}T${form.startTime}`,
       endTime: `${form.date}T${form.endTime}`,
@@ -153,8 +149,10 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
         alert("✅ PT 일정이 수정되었습니다.");
       } else {
         await axios.post("http://localhost:9000/v1/schedule/add", payload);
-        alert("✅ PT 일정을 등록했습니다.");
+        alert("✅ PT 일정이 등록되었습니다.");
       }
+
+      // 모달 닫기 X — 부모에서 제어
       onSaved?.(payload);
     } catch (err) {
       console.error("❌ PT 일정 등록/수정 실패:", err);
@@ -170,7 +168,7 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
           <Form.Select name="memNum" value={form.memNum} onChange={onChange}>
             <option value="">선택</option>
             {members.map((m) => (
-              <option key={m.memNum} value={String(m.memNum)}>
+              <option key={m.memNum} value={m.memNum}>
                 {m.memName}
               </option>
             ))}
@@ -235,12 +233,9 @@ function VacationTab({ empNum, empName, onSaved, editData, selectedDate }) {
 
   const submit = async (e) => {
     e.preventDefault();
-
-    const toNum = (v) => (v === "" || v == null ? null : Number(v));
-
     const payload = {
-      shNum: editData?.shNum, // 
-      empNum: toNum(form.empNum),
+      shNum: editData?.shNum,
+      empNum: form.empNum,
       codeBid: "VACATION",
       startTime: `${form.startDate}T00:00`,
       endTime: `${form.endDate}T23:59`,
@@ -332,12 +327,9 @@ function EtcTab({ empNum, empName, onSaved, editData, selectedDate }) {
 
   const submit = async (e) => {
     e.preventDefault();
-
-    const toNum = (v) => (v === "" || v == null ? null : Number(v));
-
     const payload = {
-      shNum: editData?.shNum, // 
-      empNum: toNum(form.empNum),
+      shNum: editData?.shNum,
+      empNum: form.empNum,
       codeBid: form.category,
       startTime: `${form.startDate}T00:00`,
       endTime: `${form.endDate}T23:59`,

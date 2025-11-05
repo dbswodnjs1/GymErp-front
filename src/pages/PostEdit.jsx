@@ -6,14 +6,10 @@ export default function PostEdit() {
   const { postId } = useParams();
   const nav = useNavigate();
 
-  // 로그인 사용자 불러오기 (sessionStorage 예시)
-  const userInfo = JSON.parse(sessionStorage.getItem("userInfo") || "{}");
-  const writerName = userInfo?.empName || "관리자";
-
   const [form, setForm] = useState({
     postTitle: "",
     postContent: "",
-    postWriter: writerName,
+    postWriter: "",
     postPinned: "N",
   });
 
@@ -25,7 +21,7 @@ export default function PostEdit() {
         setForm({
           postTitle: v.postTitle ?? "",
           postContent: v.postContent ?? "",
-          postWriter: v.postWriter ?? writerName,
+          postWriter: v.postWriter ?? "관리자",
           postPinned: v.postPinned ?? "N",
         });
       })
@@ -49,11 +45,8 @@ export default function PostEdit() {
 
     try {
       await axios.put(`http://localhost:9000/v1/post/${postId}`, form);
-      if (window.confirm("수정되었습니다. 목록으로 이동할까요?")) {
-        nav("/post");
-      } else {
-        nav(`/post/${postId}`);
-      }
+      alert("게시글이 수정되었습니다.");
+      nav(`/post/${postId}`);
     } catch (err) {
       console.error(err);
       alert("수정 실패");
@@ -86,7 +79,7 @@ export default function PostEdit() {
         />
       </div>
 
-      <div className="d-flex align-items-center justify-content-between mb-4">
+      <div className="d-flex align-items-center mb-4 gap-3">
         <div className="form-check">
           <input
             className="form-check-input"
@@ -100,7 +93,8 @@ export default function PostEdit() {
             상단 고정
           </label>
         </div>
-        <div className="text-muted">작성자: {form.postWriter}</div>
+
+        <div className="text-muted ms-auto">작성자: {form.postWriter}</div>
       </div>
 
       <div className="d-flex justify-content-end gap-2">

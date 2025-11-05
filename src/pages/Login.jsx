@@ -14,7 +14,7 @@ function Login() {
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useDispatch();
-    const from = location.state?.from?.pathname || "/emp"; // 로그인 후 가야 할 경로(원하면 바꿔)
+    const from = location.state?.from?.pathname || "/home"; // 로그인 후 가야 할 경로(원하면 바꿔)
 
     const handleLogin = async(e) => {
         e.preventDefault();
@@ -83,7 +83,7 @@ function Login() {
                         <label htmlFor="" className="form-label fw-semibold">
                             <i className="bi bi-envelope me-2"></i>이메일
                         </label>
-                        <input type="email" className="form-control form-control-lg" placeholder="이메일을 입력하세요" value={empEmail} onChange={(e)=>setEmpEmail(e.target.value)} required disabled={loading} autoFocus />
+                        <input type="text" className="form-control form-control-lg" placeholder="이메일을 입력하세요" value={empEmail} onChange={(e)=>setEmpEmail(e.target.value)} required disabled={loading} autoFocus />
                     </div>
                     <div className="mb-4">
                         <label className="form-label fw-semibold">

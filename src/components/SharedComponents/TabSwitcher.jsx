@@ -24,6 +24,7 @@ function TabSwitcher({
   activeButtonClassName = 'btn btn-primary',
   fullWidth = false,
   name = 'tabSwitcher',
+  disabled = false,
 }) {
   const wrapperClass = fullWidth ? `${className} w-100` : className;
 
@@ -31,13 +32,15 @@ function TabSwitcher({
     <div className={wrapperClass} role="group" aria-label={name}>
       {tabs.map((tab) => {
         const isActive = tab.value === activeValue;
+        const isButtonDisabled = disabled || tab.disabled;
         const btnClass = isActive ? activeButtonClassName : buttonClassName;
         return (
           <button
             key={tab.value}
             type="button"
-            className={btnClass}
-            onClick={() => onChange(tab.value)}
+            className={`${btnClass}${isButtonDisabled ? ' disabled' : ''}`}
+            onClick={isButtonDisabled ? undefined : () => onChange(tab.value)}
+            disabled={isButtonDisabled}
           >
             {tab.label}
           </button>

@@ -6,7 +6,7 @@ import Pagination from "../components/Pagination";
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-// 백엔드 응답 스키마 혼용 대비 정규화
+// 응답 스키마 정규화
 function norm(row) {
   return {
     id: row.postId ?? row.id,
@@ -23,16 +23,17 @@ export default function PostList() {
   const [rows, setRows] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
   const pageSize = 10;
 
   // 개발모드 StrictMode 중복 호출 가드
   const loaded = useRef(false);
 
-  // 목록 로드(상단고정 → 최신순 정렬은 서버에서 수행)
   useEffect(() => {
     if (loaded.current) return;
     loaded.current = true;
 
+    setLoading(true);
     axios
       .get("http://localhost:9000/v1/post")
       .then((res) => {
@@ -42,7 +43,8 @@ export default function PostList() {
       .catch((err) => {
         console.error("게시글 목록 불러오기 실패:", err);
         alert("목록 불러오기 실패");
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   // 검색 필터
@@ -63,10 +65,7 @@ export default function PostList() {
     return filtered.slice(start, start + pageSize);
   }, [filtered, page, pageSize]);
 
-  // 행 클릭 시 상세 이동
-  const onRowClick = (id) => () => nav(`/post/${id}`);
-
-  // 날짜 포맷(yyyy-mm-dd까지만)
+  // 날짜 포맷(yyyy-mm-dd)
   const d8 = (s) => (typeof s === "string" ? s.slice(0, 10) : "-");
 
   return (
@@ -76,7 +75,7 @@ export default function PostList() {
         <h2 className="m-0">게시판</h2>
 
         <div className="d-flex align-items-center gap-2">
-          {/* 심플 검색바 */}
+          {/* 검색바 */}
           <div className="input-group" style={{ minWidth: 280 }}>
             <input
               className="form-control"
@@ -88,7 +87,10 @@ export default function PostList() {
               }}
               onKeyDown={(e) => e.key === "Enter" && setPage(1)}
             />
-            <button className="btn btn-outline-secondary" onClick={() => setPage(1)}>
+            <button
+              className="btn btn-outline-secondary"
+              onClick={() => setPage(1)}
+            >
               <i className="bi bi-search" />
             </button>
           </div>
@@ -105,39 +107,51 @@ export default function PostList() {
 
       {/* 표 */}
       <div className="table-responsive">
-        <table className="table table-striped table-hover align-middle text-center mb-3">
+        <table className="table table-hover align-middle text-center mb-3">
           <thead className="table-dark sticky-top">
             <tr>
               <th style={{ width: 90 }}>번호</th>
               <th className="text-start">제목</th>
-              <th style={{ width: 180 }}>작성자</th>
-              <th style={{ width: 140 }}>조회수</th>
+              <th style={{ width: 180 }} className="d-none d-md-table-cell">
+                작성자
+              </th>
+              <th style={{ width: 120 }}>조회수</th>
               <th style={{ width: 160 }}>작성일</th>
             </tr>
           </thead>
+
           <tbody>
-            {pageList.length > 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="py-4">
+                  <div className="d-flex justify-content-center align-items-center gap-2 text-muted">
+                    <div className="spinner-border spinner-border-sm" role="status" />
+                    <span>불러오는 중...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : pageList.length > 0 ? (
               pageList.map((v) => (
-                <tr
-                  key={v.id}
-                  onClick={onRowClick(v.id)}
-                  style={{ cursor: "pointer" }}
-                >
+                <tr key={v.id}>
                   <td>{v.id}</td>
+
+                  {/* 제목: 말줄임, 고정글 배지 */}
                   <td className="text-start">
-                    {v.pinned === "Y" && <span className="me-1">📌</span>}
+                    {v.pinned === "Y" && (
+                      <span className="me-2" title="상단 고정">📌</span>
+                    )}
                     <span
-                      className="text-decoration-underline text-primary"
-                      onClick={(e) => {
-                        e.stopPropagation(); // 행 클릭과 충돌 방지
-                        nav(`/post/${v.id}`);
-                      }}
+                      className="text-decoration-underline text-primary d-inline-block text-truncate"
+                      style={{ maxWidth: 520, cursor: "pointer" }}
                       role="button"
+                      onClick={() => nav(`/post/${v.id}`)}
                     >
                       {v.title || "(제목 없음)"}
                     </span>
                   </td>
-                  <td>{v.writer}</td>
+
+                  {/* 작성자는 작은 화면에서 숨김 */}
+                  <td className="d-none d-md-table-cell">{v.writer}</td>
                   <td>{v.viewCnt}</td>
                   <td>{d8(v.createdAt)}</td>
                 </tr>

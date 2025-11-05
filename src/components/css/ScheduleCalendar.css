@@ -1,0 +1,34 @@
+/* ScheduleCalendar.css */
+.rbc-calendar {
+  width: 95%;               /* 전체 폭 넓히기 */
+  margin: 0 auto;           /* 가운데 정렬 */
+  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+}
+
+.rbc-month-view {
+  min-height: 730px;        /* 세로 간격 늘림 */
+}
+
+.rbc-day-bg {
+  height: 140px;            /* 칸 높이 약간 넓게 */  
+}
+
+/* 이벤트 박스 스타일 */
+.rbc-event {
+  font-size: 0.8rem;          /* 글씨 작게 */
+  line-height: 1.1;
+  border-radius: 6px;
+  padding: 1px 4px;           /* 내부 여백 최소화 */
+  height: 18px;               /* 이벤트 박스 높이 줄임 */
+  overflow: hidden;
+}
+
+/* 여러 이벤트 있을 때 간격 줄이기 */
+.rbc-row-content {
+  padding: 0 3px;
+}
+.rbc-event-content {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}

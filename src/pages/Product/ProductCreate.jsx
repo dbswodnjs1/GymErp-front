@@ -14,6 +14,7 @@ const PRODUCT_OR_SERVICE = [
     { value: 'SERVICE', label: '서비스 상품' },
 ];
 
+// 신규 등록 폼이 사용할 기본 값입니다.
 const DEFAULT_VALUES = {
     productType: 'PRODUCT',
     productName: '',
@@ -41,6 +42,7 @@ function ProductCreate() {
     const isPtService = isService && values.categoryCode === 'PT';
     const isMembershipService = isService && values.categoryCode === 'MEMBERSHIP';
 
+    // 상품 / 서비스 탭이 전환될 때 종속 값들을 초기화합니다.
     const handleTabChange = (nextType) => {
         setValues((prev) => ({
             ...prev,
@@ -56,8 +58,8 @@ function ProductCreate() {
 
     }, []);
 
+    // TextField는 이벤트 객체를, BinaryRadioGroup은 (name, value) 형태를 전달합니다.
     const handleChange = (input, maybeValue) => {
-        // BinaryRadioGroup처럼 (name, value) 형태로 호출할 때를 지원
         if (typeof input === 'string') {
             const name = input;
             const value = maybeValue;
@@ -83,11 +85,12 @@ function ProductCreate() {
         if (submitting) return;
         setSubmitting(true);
         try {
+            // TODO: 실제 등록 API 규격에 맞게 payload를 보정한 뒤 아래 요청을 유지하세요.
             axios.post('/v1/product', {
                 ...values,
             });
             console.log('폼 제출', values);
-            alert('등록 로직을 구현하세요.');
+            alert('등록 로직을 구현하세요.'); // 필요 없으면 제거해도 됩니다.
         } catch (error) {
             console.error(error);
             alert('등록 중 문제가 발생했습니다.');
@@ -116,9 +119,10 @@ function ProductCreate() {
                     placeholder={isProduct ? '상품 분류를 선택하세요' : '서비스 분류를 선택하세요'}
                     endpoint={`/v1/categories/list/${codeAId}`}
                     mapOption={(row) => ({
-                        value: row.codeBId,
+                        value: row.codeBId != null ? String(row.codeBId) : '',
                         label: `${row.codeBName} (${row.codeBId})`,
                     })}
+                    allowEmptyOption={!values.categoryCode}
                 />
 
                 <TextField

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import cn from 'classnames';
 
 import ProductListComponent from '../../components/ProductListComponent';
@@ -28,6 +28,7 @@ function ProductList() {
 
     const [params] = useSearchParams();
     const navigate = useNavigate();
+    const location = useLocation();
 
     useEffect(() => {
         const pageNum = params.get("pageNum") || 1;
@@ -139,6 +140,23 @@ function ProductList() {
             .catch(err=>console.log(err));
     };
 
+    const handleRowClick = (item) => {
+        const fromPath = `/product${location.search || ""}`;
+
+        if (currentTab === 'PRODUCT' && item.productId) {
+            navigate(`/product/detail/product/${item.productId}`, {
+                state: { from: fromPath, type: "PRODUCT" },
+            });
+            return;
+        }
+
+        if (currentTab === 'SERVICE' && item.serviceId) {
+            navigate(`/product/detail/service/${item.serviceId}`, {
+                state: { from: fromPath, type: "SERVICE" },
+            });
+        }
+    };
+
     return (
         <>
             <button className={cn("btn", "btn-lg", {"btn-dark":currentTab=="PRODUCT", "btn-light":currentTab=="SERVICE"})} onClick={() => handleTabChange('PRODUCT')}>실물 상품</button>
@@ -167,6 +185,7 @@ function ProductList() {
                         onPageChange={pageMove}
                         onToggleChange={handleStatusChange}
                         columns={productColumns}
+                        onRowClick={handleRowClick}
                     />
                 </div>
             </div>
