@@ -1,7 +1,20 @@
+// src/components/ScheduleModal.jsx
 import { useState, useEffect } from "react";
 import { Modal, Tabs, Tab, Button, Row, Col, Form } from "react-bootstrap";
 import axios from "axios";
 import "./css/ScheduleModal.css";
+
+/* 공통 에러 메시지 추출 유틸 */
+const extractErrorMessage = (error) => {
+  const res = error?.response;
+  if (!res) return error?.message || "네트워크 오류가 발생했습니다.";
+  return typeof res.data === "string"
+    ? res.data
+    : res.data?.message || res.statusText || "요청이 실패했습니다.";
+};
+
+
+
 
 /* ============================================================= */
 /* 🧩 메인 ScheduleModal */
@@ -100,16 +113,15 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
     memo: "",
   });
 
-  //회원 선택 시 전화번호 관련 기능
+  //전화번호 포맷
   const fmtPhone = (v) => {
     if (!v) return "";
     const s = String(v).replace(/\D/g, "");
-    if (s.length === 11) return s.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3"); // 010-1234-5678
-    if (s.length === 10) return s.replace(/(\d{2,3})(\d{3,4})(\d{4})/, "$1-$2-$3"); // 02-1234-5678 등
-    return v; // 그 외는 원문
+    if (s.length === 11) return s.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3");
+    if (s.length === 10) return s.replace(/(\d{2,3})(\d{3,4})(\d{4})/, "$1-$2-$3");
+    return v;
   };
 
-  //회원 가나다 정렬용 유틸
   const sortByKoName = (arr) =>
     [...(Array.isArray(arr) ? arr : [])].sort((a, b) =>
       (a.memName || "").localeCompare(b.memName || "", "ko")
@@ -139,7 +151,7 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
 
     axios
       .get("http://localhost:9000/v1/member")
-      .then((res) => setMembers(sortByKoName(res.data)))  // ← 정렬해서 세팅
+      .then((res) => setMembers(sortByKoName(res.data)))
       .catch((err) => console.error("❌ 회원 목록 불러오기 실패:", err));
   }, [empNum, empName, editData, selectedDate]);
 
@@ -166,11 +178,11 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
         await axios.post("http://localhost:9000/v1/schedule/add", payload);
         alert("PT 일정이 등록되었습니다.");
       }
-
       onSaved?.(payload);
     } catch (err) {
       console.error("PT 일정 등록/수정 실패:", err);
-      alert("등록 중 오류가 발생했습니다.");
+      // ✅ 서버가 준 에러 메시지(회원권 만료/잔여 0/중복 등)를 그대로 표시
+      alert(extractErrorMessage(err));
     }
   };
 
@@ -182,7 +194,6 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate }) {
           <Form.Select name="memNum" value={form.memNum} onChange={onChange}>
             <option value="">선택</option>
             {members.map((m) => {
-              // 프로젝트 컬럼명 대비: memPhone → phone → tel → memTel → mobile 순
               const rawPhone = m.memPhone ?? m.phone ?? m.tel ?? m.memTel ?? m.mobile ?? "";
               const label = `${m.memName}${rawPhone ? " : " + fmtPhone(rawPhone) : ""}`;
               return (
@@ -273,6 +284,7 @@ function VacationTab({ empNum, empName, onSaved, editData, selectedDate }) {
       onSaved?.(payload);
     } catch (err) {
       console.error("휴가 일정 등록 실패:", err);
+      alert(extractErrorMessage(err));
     }
   };
 
@@ -336,7 +348,6 @@ function EtcTab({ empNum, empName, onSaved, editData, selectedDate }) {
     axios
       .get("http://localhost:9000/v1/schedule-types")
       .then((res) => {
-        // ETC만 필터링하고 한글명 추가
         const nameMap = {
           "ETC-COMPETITION": "대회",
           "ETC-COUNSEL": "상담",
@@ -380,6 +391,7 @@ function EtcTab({ empNum, empName, onSaved, editData, selectedDate }) {
       onSaved?.(payload);
     } catch (err) {
       console.error("기타 일정 등록 실패:", err);
+      alert(extractErrorMessage(err));
     }
   };
 
