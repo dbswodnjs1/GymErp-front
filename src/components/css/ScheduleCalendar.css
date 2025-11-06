@@ -1,32 +1,82 @@
-/* ScheduleCalendar.css */
+/* ── Toolbar 정리 ─────────────────────────────── */
+.toolbar-wrap .btn-group .btn {
+  /* 버튼 사이 간격 최소화 (부트스트랩 그룹 기본 간격 활용) */
+}
+/* ── Page Header ─────────────────────────────────────────── */
+.page-header { margin-top: 6px; }
+
+.page-title {
+  font-size: 32px;          /* 존재감 있게 */
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  line-height: 1.15;
+  position: relative;
+}
+
+/* 얇은 포인트 라인(제목 아래) */
+.page-title::after {
+  content: "";
+  display: block;
+  width: 72px;              /* 길이 살짝 강조 */
+  height: 3px;
+  border-radius: 999px;
+  background: #212529;      /* 다크 톤(부트스트랩 다크와 통일) */
+  margin-top: 10px;
+}
+
+.page-subtitle {
+  font-size: 0.95rem;
+}
+
+/* 상단 구분선 여백 최적화 */
+.page-divider {
+  margin-top: 14px;
+  margin-bottom: 8px;
+}
+
+/* 반응형: 작은 화면에선 제목 살짝 축소 */
+@media (max-width: 576px) {
+  .page-title { font-size: 26px; }
+  .page-title::after { width: 56px; }
+}
+
+.month-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  line-height: 1.1;
+  margin-top: 2px;      /* 상단 살짝 띄우기 */
+  margin-bottom: 6px;   /* 요청: 월 제목에 마진 추가 */
+}
+
+.toolbar-divider {
+  margin-top: 14px;     /* 구분선 위/아래 간격 조정 */
+  margin-bottom: 0;
+}
+
+/* 좁은 화면 보정 */
+@media (max-width: 768px) {
+  .month-title { font-size: 22px; margin-bottom: 4px; }
+  .toolbar-wrap { flex-wrap: wrap; row-gap: 8px; }
+}
+
+/* ── 기존 스타일 유지 ─────────────────────────── */
 .rbc-calendar {
-  width: 95%;               /* 전체 폭 넓히기 */
-  margin: 0 auto;           /* 가운데 정렬 */
+  width: 95%;
+  margin: 0 auto;
   font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
 }
-
-.rbc-month-view {
-  min-height: 730px;        /* 세로 간격 늘림 */
-}
-
-.rbc-day-bg {
-  height: 140px;            /* 칸 높이 약간 넓게 */  
-}
-
-/* 이벤트 박스 스타일 */
+.rbc-month-view { min-height: 730px; }
+.rbc-day-bg { height: 140px; }
 .rbc-event {
-  font-size: 0.8rem;          /* 글씨 작게 */
+  font-size: 0.8rem;
   line-height: 1.1;
   border-radius: 6px;
-  padding: 1px 4px;           /* 내부 여백 최소화 */
-  height: 18px;               /* 이벤트 박스 높이 줄임 */
+  padding: 1px 4px;
+  height: 18px;
   overflow: hidden;
 }
-
-/* 여러 이벤트 있을 때 간격 줄이기 */
-.rbc-row-content {
-  padding: 0 3px;
-}
+.rbc-row-content { padding: 0 3px; }
 .rbc-event-content {
   white-space: nowrap;
   text-overflow: ellipsis;

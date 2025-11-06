@@ -1,12 +1,14 @@
 // src/pages/SchedulePage.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { format } from "date-fns";
+
+import { ko } from "date-fns/locale";
 import { Modal, Button, Form, Row, Col } from "react-bootstrap";
 import { useLocation, useNavigate } from "react-router-dom";
 import ScheduleCalendar from "../components/ScheduleCalendar";
 import ScheduleModal from "../components/ScheduleModal";
-import "../components/css/SchedulePage.css"; // ✅ 스타일 적용
+
 /* ========= 공통 유틸 ========= */
 const safeJson = (s) => {
   try { return JSON.parse(s); } catch { return null; }
@@ -22,11 +24,19 @@ const typeMap = {
   "ETC-COMPETITION": "대회",
 };
 const codeColor = (codeBid) =>
-  codeBid === "PT" || codeBid === "SCHEDULE-PT" ? "#2ecc71" :
-  codeBid === "VACATION" ? "#e74c3c" :
-  codeBid === "ETC-COMPETITION" ? "#9b59b6" :
-  codeBid === "ETC-COUNSEL" ? "#f39c12" :
-  codeBid === "ETC-MEETING" ? "#34495e" : "#95a5a6";
+  codeBid === "PT" || codeBid === "SCHEDULE-PT"
+    ? "#2ecc71"
+    : codeBid === "VACATION"
+    ? "#e74c3c"
+    : codeBid === "ETC-COMPETITION"
+    ? "#9b59b6"
+    : codeBid === "ETC-COUNSEL"
+    ? "#f39c12"
+    : codeBid === "ETC-MEETING"
+    ? "#34495e"
+    : "#95a5a6";
+
+
 
 function mapToEvents(list = []) {
   return list.map((e) => {
@@ -44,7 +54,7 @@ function mapToEvents(list = []) {
   });
 }
 
-// 저장소에서 역할 뽑기(여러 케이스 커버)
+// 저장소에서 역할 뽑기
 function readRoleFromStorage() {
   const candidates = [
     localStorage.getItem("loginUser"),
@@ -81,7 +91,8 @@ export default function SchedulePage() {
   const [events, setEvents] = useState([]);
   const [focusDate, setFocusDate] = useState(null);
 
-  const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);         // 등록/수정 모달 표시
+  const [modalKey, setModalKey] = useState(0);               // 강제 리마운트 키
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [editData, setEditData] = useState(null);
@@ -103,7 +114,8 @@ export default function SchedulePage() {
 
   /* ============================================ */
   /** 일정 로딩 */
-  const loadSchedules = async () => {
+  const loadSchedules = useCallback(async () => {
+
     try {
       const url = empNum
         ? `http://localhost:9000/v1/schedule/emp/${empNum}`
@@ -115,41 +127,41 @@ export default function SchedulePage() {
     } catch (err) {
       console.error("[일정 불러오기 실패]:", err);
     }
-  };
+  }, [empNum]);
 
   // 최초 & empNum 변경 시 로딩
   useEffect(() => {
     loadSchedules();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [empNum]);
+  }, [loadSchedules]);
+
 
   /* ============================================ */
   /** 관리자 검색 (직원이름, 유형, 키워드만) */
   const searchAdmin = async ({ empName, codeBid, keyword }) => {
-    if (!isAdmin) return; // 이중 차단
 
-    const q = { page: 1, size: 20 };
+    if (!isAdmin) return;
+    const params = { page: 1, size: 20 };
+
     const kw = (empName || keyword || "").trim();
     if (kw) q.keyword = kw;
     if (codeBid) q.codeBid = codeBid;
 
-    try {
-      const { data } = await axios.get(`http://localhost:9000/v1/schedules/search`, { params: q });
-      const list = data?.list || [];
-      setEvents(mapToEvents(list));
+    const { data } = await axios.get(`http://localhost:9000/v1/schedules/search`, { params });
 
-      if (list.length > 0) {
-        const first = list[0];
-        setFocusDate(new Date(first.startTime)); // 포커스 이동
-        const next = new URLSearchParams(location.search);
-        next.set("empNum", String(first.empNum));
-        if (first.empName) next.set("empName", first.empName);
-        navigate({ search: `?${next.toString()}` }, { replace: true });
-      } else {
-        alert("검색 결과가 없습니다.");
-      }
-    } catch (e) {
-      console.error("[관리자 검색 실패]", e);
+    const list = data?.list || [];
+    const mapped = mapToEvents(list);
+    setEvents(mapped);
+
+    if (list.length > 0) {
+      const first = list[0];
+      setFocusDate(new Date(first.startTime));
+      const next = new URLSearchParams(location.search);
+      next.set("empNum", String(first.empNum));
+      if (first.empName) next.set("empName", first.empName);
+      navigate({ search: `?${next.toString()}` }, { replace: true });
+    } else {
+      alert("검색 결과가 없습니다.");
+
     }
   };
 
@@ -159,7 +171,8 @@ export default function SchedulePage() {
     const dateStr = format(slotInfo.start, "yyyy-MM-dd");
     setClickedDate(dateStr);
     setEditData(null);
-    setShowModal(true);
+    setModalKey(Date.now());          // 항상 새 키로 리마운트
+    setShowModal(true);               // 표시
   };
 
   /** 일정 클릭 → 상세 보기 */
@@ -170,7 +183,10 @@ export default function SchedulePage() {
 
   /** 상세 보기 → 삭제 */
   const handleDelete = async () => {
-    if (!selectedEvent?.shNum) { alert("삭제할 일정의 shNum이 없습니다."); return; }
+    if (!selectedEvent?.shNum) {
+      alert("삭제할 일정의 shNum이 없습니다.");
+      return;
+    }
     if (!window.confirm("정말 이 일정을 삭제하시겠습니까?")) return;
     try {
       const url = `http://localhost:9000/v1/schedule/delete/${selectedEvent.shNum}`;
@@ -190,15 +206,51 @@ export default function SchedulePage() {
   const handleEdit = () => {
     setShowDetailModal(false);
     setEditData(selectedEvent);
+    setModalKey(Date.now());          // 수정 모달도 새 키로
     setShowModal(true);
+  };
+
+  /** 등록/수정 모달 닫기 (X/ESC/닫기) */
+  const handleCloseEditModal = () => {
+    setShowModal(false);              // 반드시 false로 내려 언마운트
+    setEditData(null);
+    setClickedDate(null);
+  };
+
+  /** 등록/수정 저장 완료 후: 닫고 새로고침 */
+  const handleSaved = async () => {
+    setShowModal(false);
+    setEditData(null);
+    setClickedDate(null);
+    await loadSchedules();
   };
 
   return (
     <div>
-      <h4 style={{ fontWeight: 600, color: "#444", fontSize: "1.8rem", marginBottom: "1.2rem" }}>
-        일정관리
-      </h4>
-      <hr />
+      <div className="d-flex align-items-center gap-2 mb-3">
+        <span className="cal-badge">
+          <i className="bi bi-calendar2-week" />
+        </span>
+
+        <div className="d-flex flex-column">
+          <h4 className="m-0 fw-semibold" style={{ color: "#2b2b2b", fontSize: "1.6rem" }}>
+            일정관리
+          </h4>
+          <div className="cal-subtitle">
+            {format(focusDate || new Date(), "yyyy.MM.dd (EEE)", { locale: ko })}
+          </div>
+        </div>
+
+        {/* <div className="ms-auto d-flex gap-2">
+    <Button variant="outline-secondary" size="sm" onClick={() => setFocusDate?.(new Date())}>
+      오늘
+    </Button>
+    <Button variant="primary" size="sm" onClick={() => { setEditData(null); setShowModal(true); }}>
+      새 일정
+    </Button>
+  </div> */}
+      </div>
+      <hr className="mt-2" />
 
       {/* 관리자 전용 간단 검색바 */}
       {isAdmin ? <AdminSearchBar onSearch={searchAdmin} isAdmin={isAdmin} /> : null}
@@ -209,57 +261,51 @@ export default function SchedulePage() {
         onSelectSlot={handleSelectSlot}
         onSelectEvent={handleSelectEvent}
         isAdmin={isAdmin}
-        focusDate={focusDate} // 해당 월로 이동
+        focusDate={focusDate}
+
       />
 
-      {/* 등록/수정 모달 */}
+      {/* 등록/수정 모달 — 조건부 렌더링 + 강제 리마운트 키 */}
       {showModal && (
         <ScheduleModal
-          show={showModal}
+          key={modalKey}             // 동일 날짜/데이터여도 항상 새로 마운트
+          show={true}
           empNum={empNum}
           empName={empName}
-          onSaved={async () => {
-            await loadSchedules(); // 즉시 새로고침
-            setShowModal(false);   // 모달 닫기
-            setEditData(null);
-          }}
           editData={editData}
           selectedDate={clickedDate}
+          onSaved={handleSaved}      // 저장 후 닫고, 목록 새로고침
+          onClose={handleCloseEditModal}  // 닫기 버튼/ESC/X 처리
         />
       )}
 
       {/* 상세 보기 모달 */}
-      <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>일정 상세 정보</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedEvent ? (
-            <>
-              <p><strong>유형:</strong> {selectedEvent.codeBName || selectedEvent.codeBid || "미지정"}</p>
-              <p><strong>직원:</strong> {selectedEvent.empName || "-"}</p>
-              {selectedEvent.memName && <p><strong>회원:</strong> {selectedEvent.memName}</p>}
-              <p><strong>내용:</strong> {selectedEvent.memo || "내용 없음"}</p>
-              <p><strong>시작:</strong> {format(selectedEvent.start, "yyyy-MM-dd HH:mm")}</p>
-              <p><strong>종료:</strong> {format(selectedEvent.end, "yyyy-MM-dd HH:mm")}</p>
-            </>
-          ) : (
-            <p>일정 정보를 불러오는 중...</p>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="primary" onClick={handleEdit}>수정</Button>
-          <Button variant="danger" onClick={handleDelete}>삭제</Button>
-          <Button variant="secondary" onClick={() => setShowDetailModal(false)}>닫기</Button>
-        </Modal.Footer>
-      </Modal>
+      {showDetailModal && selectedEvent && (
+        <ScheduleModal
+          show={showDetailModal}
+          mode="view"
+          defaultTab={
+            selectedEvent.codeBid === "VACATION"
+              ? "vacation"
+              : selectedEvent.codeBid?.startsWith("ETC")
+              ? "etc"
+              : "pt"
+          }
+          empNum={selectedEvent.empNum}
+          empName={selectedEvent.empName}
+          editData={selectedEvent}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onClose={() => setShowDetailModal(false)}
+        />
+      )}
     </div>
   );
 }
 
 /* ========= 관리자 간단 검색바 ========= */
 function AdminSearchBar({ onSearch, isAdmin = false }) {
-  if (!isAdmin) return null; // 🔒 안전장치
+  if (!isAdmin) return null;
 
   const [empName, setEmpName] = useState("");
   const [codeBid, setCodeBid] = useState("");
@@ -270,55 +316,49 @@ function AdminSearchBar({ onSearch, isAdmin = false }) {
     onSearch?.({ empName: empName.trim(), codeBid, keyword: keyword.trim() });
   };
   const reset = () => {
-    setEmpName(""); setCodeBid(""); setKeyword("");
+    setEmpName("");
+    setCodeBid("");
+    setKeyword("");
     onSearch?.({ empName: "", codeBid: "", keyword: "" });
   };
 
   return (
-    <div className="sch-wrap">
-      <Form onSubmit={submit} className="sch-card">
-        <Row className="gy-3 align-items-end">
-          <Col md={3}>
-            <div className="sch-label">직원이름</div>
-            <Form.Control
-              className="sch-input"
-              value={empName}
-              onChange={(e) => setEmpName(e.target.value)}
-              placeholder="예) 시스템관리자"
-            />
-          </Col>
-          <Col md={2}>
-            <div className="sch-label">유형</div>
-            <Form.Select
-              className="sch-select"
-              value={codeBid}
-              onChange={(e) => setCodeBid(e.target.value)}
-            >
-              <option value="">전체</option>
-              <option value="SCHEDULE-PT">PT</option>
-              <option value="VACATION">휴가</option>
-              <option value="ETC-MEETING">회의</option>
-              <option value="ETC-COUNSEL">상담</option>
-              <option value="ETC-COMPETITION">대회</option>
-            </Form.Select>
-          </Col>
-          <Col md={4}>
-            <div className="sch-label">키워드(메모/회원명 등)</div>
-            <Form.Control
-              className="sch-input"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder="예) 초기상담, 김철수"
-            />
-          </Col>
-          <Col md="auto">
-            <div className="d-flex gap-2 sch-actions">
-              <Button type="submit" variant="primary">검색</Button>
-              <Button type="button" variant="secondary" onClick={reset}>초기화</Button>
-            </div>
-          </Col>
-        </Row>
-      </Form>
-    </div>
+    <Form onSubmit={submit} className="mb-3">
+      <Row className="gy-2 align-items-end">
+        <Col md={3}>
+          <Form.Label>직원이름</Form.Label>
+          <Form.Control
+            value={empName}
+            onChange={(e) => setEmpName(e.target.value)}
+            placeholder="예) 시스템관리자"
+          />
+        </Col>
+        <Col md={2}>
+          <Form.Label>유형</Form.Label>
+          <Form.Select value={codeBid} onChange={(e) => setCodeBid(e.target.value)}>
+            <option value="">전체</option>
+            <option value="SCHEDULE-PT">PT</option>
+            <option value="VACATION">휴가</option>
+            <option value="ETC-MEETING">회의</option>
+            <option value="ETC-COUNSEL">상담</option>
+            <option value="ETC-COMPETITION">대회</option>
+          </Form.Select>
+        </Col>
+        <Col md={4}>
+          <Form.Label>키워드(메모/회원명 등)</Form.Label>
+          <Form.Control
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="예) 초기상담, 김철수"
+          />
+        </Col>
+        <Col md="auto">
+          <div className="d-flex gap-2">
+            <Button type="submit" variant="primary">검색</Button>
+            <Button type="button" variant="secondary" onClick={reset}>초기화</Button>
+          </div>
+        </Col>
+      </Row>
+    </Form>
   );
 }

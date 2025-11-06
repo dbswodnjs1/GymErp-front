@@ -58,7 +58,6 @@ export default function BsSideBar() {
   };
 
   return (
-    // ❗ 여기서는 더 이상 fixed/top 주지 않는다. App.jsx가 포지셔닝 담당.
     <div
       className="bg-dark text-white d-flex flex-column"
       style={{
@@ -88,28 +87,34 @@ export default function BsSideBar() {
             </NavLink>
           </li> */}
 
-          {/* 드롭다운 메뉴 */}
-          <DropdownMenu icon="people" title="직원">
-            <SubMenuItem to="/emp" icon="table" text="직원목록"/>
-            <SubMenuItem to="/schedule" icon="calendar-event" text="일정관리"/>
-            <SubMenuItem to="attendance/my" icon="clock" text="출퇴근관리"/>
+          {/* 직원 */}
+          <DropdownMenu icon="person-badge" title="직원">
+            <SubMenuItem to="/emp"           icon="table"           text="직원목록" />
+            <SubMenuItem to="/schedule"      icon="calendar-event"  text="일정관리" />
+            <SubMenuItem to="/attendance/my" icon="clock-history"   text="출퇴근관리" />
           </DropdownMenu>
-          <DropdownMenu icon="people-fill" title="회원">
-            <SubMenuItem to="/member" icon="table" text="회원목록" />
-          </DropdownMenu>
-          <DropdownMenu icon="people-fill" title="매출">
-            <SubMenuItem to="/sales/SalesItemList" icon="cart-plus" text="상품판매리스트" />
 
+          {/* 회원 */}
+          <DropdownMenu icon="person-lines-fill" title="회원">
+            <SubMenuItem to="/member" icon="card-list" text="회원목록" />
           </DropdownMenu>
-          <DropdownMenu icon="people-fill" title="상품관리">
-            <SubMenuItem to="/product" icon="cart-plus" text="상품목록" />
-            <SubMenuItem to="/stock" icon="cart-plus" text="재고현황" />
-          </DropdownMenu>           
 
-           {/* 게시판 */}
-          <DropdownMenu icon="card-text" title="게시판">
+          {/* 매출 */}
+          <DropdownMenu icon="cash-coin" title="매출">
+            <SubMenuItem to="/sales/salesitemlist" icon="receipt" text="상품판매리스트" />
+          </DropdownMenu>
+
+          {/* 상품관리 */}
+          <DropdownMenu icon="box-seam" title="상품관리">
+            <SubMenuItem to="/product"        icon="box-seam" text="상품목록" />
+            <SubMenuItem to="/stock/inbound"  icon="boxes"    text="재고현황" />
+          </DropdownMenu>
+
+          {/* 게시판 */}
+          <DropdownMenu icon="chat-dots" title="게시판">
             <SubMenuItem to="/post" icon="list-ul" text="게시글 목록" />
           </DropdownMenu>
+
         </ul>
       </div>
 

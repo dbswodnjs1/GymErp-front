@@ -154,96 +154,96 @@ function ProductDetail(props) {
         navigate(`/product/edit/${editType}/${targetId}`);
     };
 
-
-
-
     return (
-        <div>
-            {/* 탭은 readonly 표시 */}
-            <TabSwitcher
-                tabs={PRODUCT_OR_SERVICE}
-                activeValue={values.productType}
-                onChange={() => { }}
-                disabled
-            />
+        <div className="row justify-content-center">
+            <div className="card col-md-8 col-lg-6">
+                <div className="card-body">
+                    {/* 탭은 readonly 표시 */}
+                    <TabSwitcher
+                        tabs={PRODUCT_OR_SERVICE}
+                        activeValue={values.productType}
+                        onChange={() => { }}
+                        disabled
+                    />
 
-            <TextField
-                label="상품 구분"
-                name="categoryLabel"
-                value={values.categoryLabel}
-                onChange={() => { }}
-                readOnly
-            />
+                    <TextField
+                        label="상품 구분"
+                        name="categoryLabel"
+                        value={values.categoryLabel}
+                        onChange={() => { }}
+                        readOnly
+                    />
 
-            {/* 재고 이름 */}
-            <TextField
-                label={values.productType === "PRODUCT" ? "상품명" : "서비스명"}
-                name="productName"
-                value={values.productName}
-                onChange={() => { }}
-                readOnly
-            />
+                    {/* 재고 이름 */}
+                    <TextField
+                        label={values.productType === "PRODUCT" ? "상품명" : "서비스명"}
+                        name="productName"
+                        value={values.productName}
+                        onChange={() => { }}
+                        readOnly
+                    />
 
-            <TextField
-                label="판매 가격"
-                name="salePrice"
-                value={values.salePrice}
-                onChange={() => { }}
-                readOnly
-            />
+                    <TextField
+                        label="판매 가격"
+                        name="salePrice"
+                        value={values.salePrice}
+                        onChange={() => { }}
+                        readOnly
+                    />
 
-            <TextField
-                label={values.quantityLabel}
-                name="quantityInfo"
-                value={values.quantityInfo}
-                onChange={() => { }}
-                readOnly
-            />
+                    <TextField
+                        label={values.quantityLabel}
+                        name="quantityInfo"
+                        value={values.quantityInfo}
+                        onChange={() => { }}
+                        readOnly
+                    />
 
-            {/* Active 상태를 옵션값으로 나타냄. */}
-            <BinaryRadioGroup
-                label="판매 상태"
-                name="saleStatus"
-                value={values.saleStatus}
-                onChange={() => { }}
-                disabled
-                options={[
-                    { value: "ACTIVE", label: "판매중" },
-                    { value: "INACTIVE", label: "판매중지" },
-                ]}
-            />
+                    {/* Active 상태를 옵션값으로 나타냄. */}
+                    <BinaryRadioGroup
+                        label="판매 상태"
+                        name="saleStatus"
+                        value={values.saleStatus}
+                        onChange={() => { }}
+                        disabled
+                        options={[
+                            { value: "ACTIVE", label: "판매중" },
+                            { value: "INACTIVE", label: "판매중지" },
+                        ]}
+                    />
 
-            <TextField
-                label="메모"
-                name="memo"
-                value={values.memo}
-                onChange={() => { }}
-                readOnly
-            />
+                    <TextField
+                        label="메모"
+                        name="memo"
+                        value={values.memo}
+                        onChange={() => { }}
+                        readOnly
+                    />
 
-            <TextField
-                label="등록일"
-                name="createdAt"
-                value={values.createdAt}
-                onChange={() => { }}
-                readOnly
-            />
+                    <TextField
+                        label="등록일"
+                        name="createdAt"
+                        value={values.createdAt}
+                        onChange={() => { }}
+                        readOnly
+                    />
 
-            <TextField
-                label="최종 수정일"
-                name="updatedAt"
-                value={values.updatedAt}
-                onChange={() => { }}
-                readOnly
-            />
-
-            <div className="d-flex gap-2 mt-4">
-                <button type="button" className="btn btn-outline-secondary" onClick={() => navigate(backToList)}>
-                    목록으로
-                </button>
-                <button type="button" className="btn btn-primary" onClick={handleEdit}>
-                    수정하기
-                </button>
+                    <TextField
+                        label="최종 수정일"
+                        name="updatedAt"
+                        value={values.updatedAt}
+                        onChange={() => { }}
+                        readOnly
+                    />
+                    <div className="d-flex gap-2 mt-4">
+                        <button type="button" className="btn btn-outline-secondary" onClick={() => navigate(backToList)}>
+                            목록으로
+                        </button>
+                        <button type="button" className="btn btn-primary" onClick={handleEdit}>
+                            수정하기
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

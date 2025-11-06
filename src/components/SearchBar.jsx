@@ -3,13 +3,16 @@ function SearchBar({ type, keyword, onTypeChange, onKeywordChange, onSearch }) {
     <div className="d-flex">
       <select
         className="form-select me-2"
-        style={{ width: "120px" }}
+        style={{ width: 180 }}
         value={type}
         onChange={(e) => onTypeChange(e.target.value)}
+        title="검색 조건"
       >
         <option value="all">전체</option>
         <option value="name">이름</option>
         <option value="phone">연락처</option>
+        <option value="activeOnly">재직자</option>
+        <option value="resignedOnly">퇴사자</option>
       </select>
 
       <input
@@ -19,7 +22,8 @@ function SearchBar({ type, keyword, onTypeChange, onKeywordChange, onSearch }) {
         value={keyword}
         onChange={(e) => onKeywordChange(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && onSearch()}
-        style={{ width: "200px" }}
+        style={{ width: 220 }}
+        disabled={false}
       />
 
       <button className="btn btn-outline-secondary" onClick={onSearch}>
@@ -28,5 +32,4 @@ function SearchBar({ type, keyword, onTypeChange, onKeywordChange, onSearch }) {
     </div>
   );
 }
-
 export default SearchBar;

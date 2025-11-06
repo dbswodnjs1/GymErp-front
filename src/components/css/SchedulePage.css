@@ -68,3 +68,36 @@
   letter-spacing: .1px;
 }
 .rbc-event-content { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ====== 캘린더 커스텀 배지 ====== */
+.cal-badge{
+  width: 44px; height: 44px;
+  border-radius: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #5c74ff, #7b93ff);
+  box-shadow: 0 6px 16px rgba(105,92,255,.28);
+}
+.cal-badge i{ font-size: 20px; color: #fff; }
+.cal-badge:hover{
+  transform: translateY(-1px);
+  transition: transform .15s ease, box-shadow .15s ease;
+  box-shadow: 0 10px 22px rgba(105,92,255,.35);
+}
+/* 일정관리 서브타이틀(현재 날짜) */
+.cal-subtitle{
+  margin-top: 2px;
+  font-size: 1.05rem;        /* 더 크게 */
+  font-weight: 600;          /* 또렷하게 */
+  color: #4b5563;            /* 차분한 회색 */
+  letter-spacing: .2px;
+}
+
+/* (선택) 칩 느낌 원하면 아래 클래스 추가해서 <div className="cal-subtitle cal-chip"> 로 사용 */
+.cal-chip{
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+}
+

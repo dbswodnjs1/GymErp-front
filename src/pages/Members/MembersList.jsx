@@ -25,7 +25,8 @@ export default function MembersList() {
   // 목록 로드
   const loadMembers = async () => {
     try {
-      const res = await axios.get('http://localhost:9000/v1/member', { params: { status } });
+      // 항상 전체를 받아와서(ALL) 클라이언트에서 상태/검색/정렬 처리
+      const res = await axios.get('http://localhost:9000/v1/member');
       setMembers(res.data || []);
     } catch (err) {
       console.error('회원 목록 조회 실패:', err);
@@ -43,6 +44,41 @@ export default function MembersList() {
       (m.memEmail && m.memEmail.toLowerCase().includes(kw))
     );
   }, [members, searchKeyword]);
+
+  // === 분류(회원권 상태), 카운트, 정렬 ===
+  // 서버에서 계산해주는 membershipStatus('사용중' | '미사용중')만 신뢰
+  // * 백엔드 Mapper: lv.endDate가 오늘 미만이거나 없음 => '미사용중', 오늘 이상 => '사용중'
+  const isUsing = (m) => (m?.membershipStatus || '').trim() === '사용중';
+
+  // 검색 결과 기준으로 카운트
+  const counts = useMemo(() => {
+    const base = filteredMembers;
+    let using = 0, notUsing = 0;
+    for (const m of base) { isUsing(m) ? using++ : notUsing++; }
+    return { using, notUsing, all: base.length };
+  }, [filteredMembers]);
+
+  // 상태 필터는 클라이언트에서 적용 (서버와 동일 기준)
+  const viewMembers = useMemo(() => {
+    if (status === 'ALL') return filteredMembers;
+    if (status === 'USING') return filteredMembers.filter(isUsing);
+    return filteredMembers.filter((m) => !isUsing(m));
+  }, [filteredMembers, status]);
+
+  // 정렬 옵션
+  const [sort, setSort] = useState('NAME_ASC'); // NAME_ASC | EXPIRY_ASC
+
+  // 최종 정렬
+  const sortedMembers = useMemo(() => {
+    const arr = [...viewMembers];
+    if (sort === 'NAME_ASC') {
+      arr.sort((a,b)=> (a?.memName||'').localeCompare(b?.memName||'', 'ko-KR', { sensitivity:'base' }));
+    } else if (sort === 'EXPIRY_ASC') {
+      const toTime = (x)=> x?.voucherEndDate ? new Date(x.voucherEndDate).getTime() : Infinity;
+      arr.sort((a,b)=> toTime(a) - toTime(b));
+    }
+    return arr;
+  }, [viewMembers, sort]);
 
   // 우측 패널 렌더링
   const renderRight = () => {
@@ -111,23 +147,34 @@ export default function MembersList() {
           </button>
         </div>
 
-        {/* 상태 필터 */}
+        {/* 상태 필터 + 카운트 */}
         <div className="p-3 border-bottom">
-          <div className="btn-group w-100">
+          <div className="btn-group w-100 mb-2">
             <button className={`btn btn-outline-secondary ${status==='ALL'?'active':''}`} onClick={()=>setStatus('ALL')}>전체</button>
             <button className={`btn btn-outline-secondary ${status==='USING'?'active':''}`} onClick={()=>setStatus('USING')}>사용중</button>
             <button className={`btn btn-outline-secondary ${status==='NOT_USING'?'active':''}`} onClick={()=>setStatus('NOT_USING')}>미사용중</button>
           </div>
+          <div className="text-muted small">
+            <i className="bi bi-info-circle me-1"></i>
+            전체 {counts.all}명 · 사용중 {counts.using}명 · 미사용중 {counts.notUsing}명
+          </div>
         </div>
 
-        {/* 검색 */}
+        {/* 검색 / 정렬 */}
         <div className="p-3 border-bottom">
-          <input type="text" className="form-control" placeholder="회원 검색" value={searchKeyword} onChange={(e)=>setSearchKeyword(e.target.value)} />
+          <input type="text" className="form-control mb-2" placeholder="회원명 / 연락처 검색" value={searchKeyword} onChange={(e)=>setSearchKeyword(e.target.value)} />
+          <div className="d-flex align-items-center gap-2">
+            <label className="form-label mb-0 small text-muted">정렬</label>
+            <select className="form-select form-select-sm" style={{ maxWidth: 220 }} value={sort} onChange={(e)=>setSort(e.target.value)}>
+              <option value="NAME_ASC">이름순 (가-하)</option>
+              <option value="EXPIRY_ASC">회원권 만료일 빠른순</option>
+            </select>
+          </div>
         </div>
 
         {/* 리스트 */}
         <div className="flex-grow-1">
-          {filteredMembers.map((m) => (
+          {sortedMembers.map((m) => (
             <div
               key={m.memNum}
               className={`p-3 border-bottom small ${selectedId === m.memNum && mode !== 'create' ? 'bg-primary text-white' : 'bg-white'}`}
@@ -151,7 +198,7 @@ export default function MembersList() {
               </div>
             </div>
           ))}
-          {filteredMembers.length === 0 && (
+          {sortedMembers.length === 0 && (
             <div className="p-3 text-center text-muted">검색된 회원이 없습니다.</div>
           )}
         </div>

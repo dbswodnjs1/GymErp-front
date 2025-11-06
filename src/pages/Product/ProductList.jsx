@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate, useSearchParams, useLocation, NavLink } from 'react-router-dom';
 import cn from 'classnames';
@@ -35,10 +35,13 @@ function ProductList() {
     const navigate = useNavigate();
     const location = useLocation();
 
+    const tabName = params.get("tab") || "PRODUCT";
+
     useEffect(() => {
         const pageNum = params.get("pageNum") || 1;
         const keyword = params.get("keyword") || "";
         const categoryCodes = params.getAll("categoryCodes") || [];
+        const tabName = params.get("tab") || "PRODUCT";
 
         // URL 파라미터를 state에 동기화
         setSearch({ keyword });
@@ -55,7 +58,7 @@ function ProductList() {
         qs.set("sortBy", sortConfig.key);
         qs.set("direction", sortConfig.direction);
 
-        const apiEndpoint = (currentTab === 'PRODUCT') ? '/v1/product' : '/v1/service';
+        const apiEndpoint = (tabName === 'PRODUCT') ? '/v1/product' : '/v1/service';
 
         axios.get(`${apiEndpoint}?${qs.toString()}`)
             .then(res => {
@@ -69,7 +72,7 @@ function ProductList() {
                 console.error('Axios error:', err);
             });
 
-    }, [params, currentTab, sortConfig]);
+    }, [params, sortConfig]);
 
     const handleSort = (key) => {
         setSortConfig(prevConfig => {
@@ -98,8 +101,12 @@ function ProductList() {
 
     const handleTabChange = (tab) => {
         setCurrentTab(tab);
-        // URL을 변경하여 useEffect를 트리거
-        navigate("/product");
+        const qs = new URLSearchParams(params);
+        qs.set("tab", tab);
+        qs.set("pageNum", "1");
+        qs.delete("categoryCodes");
+        qs.delete("keyword");
+        navigate(`/product?${qs.toString()}`);
     };
 
     const handleCategoryChange = (newCategories) => {
@@ -196,13 +203,13 @@ function ProductList() {
                 {/* 2-1. 탭 버튼 */}
                 <div>
                     <button 
-                        className={cn("btn", "btn-lg", {"btn-dark": currentTab === "PRODUCT", "btn-light": currentTab === "SERVICE"})} 
+                        className={cn("btn", "btn-lg", {"btn-dark": tabName === "PRODUCT", "btn-light": currentTab === "SERVICE"})} 
                         onClick={() => handleTabChange('PRODUCT')}
                     >
                         실물 상품
                     </button>
                     <button 
-                        className={cn("btn", "btn-lg", {"btn-dark": currentTab === "SERVICE", "btn-light": currentTab === "PRODUCT"})} 
+                        className={cn("btn", "btn-lg", {"btn-dark": tabName === "SERVICE", "btn-light": currentTab === "PRODUCT"})} 
                         onClick={() => handleTabChange('SERVICE')}
                     >
                         서비스 상품
@@ -214,6 +221,7 @@ function ProductList() {
                     <NavLink
                         to="/product/create" 
                         className="btn btn-primary"
+                        state={{ defaultTab: currentTab }}
                     >
                         상품 등록
                     </NavLink>
