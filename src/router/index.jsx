@@ -10,7 +10,6 @@ import EmpDetail from "../pages/EmpDetail.jsx";
 import EmpEdit from "../pages/EmpEdit.jsx";
 import EmpAttendanceMy from "../pages/EmpAttendance/myAttendance.jsx";
 import SchedulePage from "../pages/SchedulePage.jsx";
-import ProductList from "../pages/Product/ProductList.jsx";
 
 import MembersList from "../pages/Members/MembersList.jsx";
 
