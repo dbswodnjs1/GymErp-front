@@ -61,6 +61,9 @@ function ProductDetail(props) {
 
         // 
         const fetchDetail = async () => {
+
+            let stockQuantity = null;
+
             try {
                 setLoading(true);
 
@@ -71,7 +74,16 @@ function ProductDetail(props) {
 
                 // 위 api 호출해서 데이터 가져오기
                 const { data } = await axios.get(endpoint);
-
+// ---
+                if(normalizedType!= "SERVICE"){
+                    try{
+                        const stockResponse = await axios.get(`/v1/stock/${targetId}`)
+                        stockQuantity = stockResponse.data;
+                    }catch(err){
+                        console.log(err);
+                    } 
+                }
+// ---
                 // 응답 데이터의 코드네임 있으면 카테고리 라벨 생성 코드A-코드B 형식으로 (ex.서비스-PT), 코드네임이 없으면 서비스인지 실물인지라도 파악
                 const categoryLabel =
                     data.codeAName && data.codeBName
@@ -95,8 +107,11 @@ function ProductDetail(props) {
                         typeof data.price === "number" // 가격이 숫자형이면 천단위 콤마 추가 
                             ? data.price.toLocaleString()
                             : data.price || "",
+// ---
                     // 재고량 또는 서비스 수량 가져오기 
-                    quantityInfo: data.quantity ?? data.serviceValue ?? "",
+                    // quantityInfo: data.quantity ?? data.serviceValue ?? "",
+                    quantityInfo: stockQuantity ?? data.serviceValue ?? "",
+// ---
                     saleStatus: data.isActive ? "ACTIVE" : "INACTIVE", // 활성화 여부
                     // 메모 있으면 넣어주고 없으면 기본값.
                     memo:

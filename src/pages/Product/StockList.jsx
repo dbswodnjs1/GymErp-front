@@ -200,102 +200,150 @@ function StockList() {
         navigate({ search: qs.toString() });
     };
 
-    return <>
-        <CategoryCheckbox
-            codeAId={'PRODUCT'}
-            checkedList={selectedCategories}
-            onChange={handleCategoryChange}
-        />
-        <ProductSearchBar
-            keyword={search.keyword}
-            onSearchChange={handleSearchChange}
-            onSearchClick={handleSearchClick}
-        />
-        <ProductListComponent
-            pageInfo={pageInfo}
-            currentTab={'PRODUCT'}
-            onPageChange={pageMove}
-            columns={productColumns}
-            onRowClick={handleRowClick}
-            onSort={handleSort}
-            sortConfig={sortConfig}
-        />
-
-        <div className="row justify-content-center g-3 align-items-end">
-            <div className="col-md-3">
-                <label htmlFor="startDate" className="form-label">기간 선택</label>
-                <div className="input-group">
-                    <input
-                        type="date"
-                        id="startDate"
-                        className="form-control"
-                        value={filterDetails.startDate}
-                        onChange={(e) =>
-                            setFilterDetails((prev) => ({ ...prev, startDate: e.target.value }))
-                        }
-                    />
-                    <span className="input-group-text">~</span>
-                    <input
-                        type="date"
-                        id="endDate"
-                        className="form-control"
-                        value={filterDetails.endDate}
-                        onChange={(e) =>
-                            setFilterDetails((prev) => ({ ...prev, endDate: e.target.value }))
-                        }
-                    />
+    return (
+        <div className="container-fluid mt-3">
+            
+            {/* 1. 메인 영역: 왼쪽 사이드바 + 오른쪽 컨텐츠 */}
+            <div className="row g-3">
+                
+                {/* 1-1. 왼쪽 사이드바 (col-md-3) */}
+                <div className="col-md-3">
+                    
+                    
+                    <div className="p-3 mb-3 border rounded shadow-sm bg-white">
+                        {/* 1-1a. 체크박스 영역 (흰색 박스) */}
+                        <div className="pt-3">
+                            <CategoryCheckbox
+                            codeAId={'PRODUCT'}
+                            checkedList={selectedCategories}
+                            onChange={handleCategoryChange}
+                        />
+                        </div>
+                        {/* 1-1b. 검색창 영역 (흰색 박스, 체크박스 아래) */}
+                        <div className='pt-3'>
+                            <ProductSearchBar
+                            keyword={search.keyword}
+                            onSearchChange={handleSearchChange}
+                            onSearchClick={handleSearchClick}
+                        />
+                        </div>
+                    </div>
+                    
+                    {/* 1-1c. 상품 목록 테이블 */}
+                    <div className="mt-3">
+                        <ProductListComponent
+                            pageInfo={pageInfo}
+                            onPageChange={pageMove}
+                            columns={productColumns}
+                            onRowClick={handleRowClick}
+                            onSort={handleSort}
+                            sortConfig={sortConfig}
+                        />
+                    </div>
                 </div>
-            </div>
+
+                {/* 1-2. 오른쪽 메인 컨텐츠 (col-md-9) */}
+                <div className="col-md-9">
+                    
+                    {/* 2. "기간 선택" UI (오른쪽 영역의 최상단) */}
+                    <div className="row justify-content-center g-3 align-items-end mb-3">
+                        <div className="col-md-6"> 
+                            <label htmlFor="startDate" className="form-label">기간 선택</label>
+                            <div className="input-group">
+                                <input
+                                    type="date"
+                                    id="startDate"
+                                    className="form-control"
+                                    value={filterDetails.startDate}
+                                    onChange={(e) =>
+                                        setFilterDetails((prev) => ({ ...prev, startDate: e.target.value }))
+                                    }
+                                />
+                                <span className="input-group-text">~</span>
+                                <input
+                                    type="date"
+                                    id="endDate"
+                                    className="form-control"
+                                    value={filterDetails.endDate}
+                                    onChange={(e) =>
+                                        setFilterDetails((prev) => ({ ...prev, endDate: e.target.value }))
+                                    }
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 3. 입고/출고 테이블 */}
+                    <div className="row g-3">
+                        
+                        {/* 3-1. 입고 내역 (col-6) */}
+                        <div className="col-md-6">
+                            <NavLink 
+                                to={`/stock/inbound/${selectedItemId}`}
+                                className="btn btn-primary mb-2" 
+                            >
+                                입고
+                            </NavLink>
+                            <table className="table table-striped text-center table-sm"> 
+                                <thead className="table-dark">
+                                    <tr>
+                                        <th>날짜</th>
+                                        <th>수량</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {inboundPageInfo.list.map(item => (
+                                        <tr key={`in-${item.createdAt}`}> 
+                                            <td>{item.createdAt}</td>
+                                            <td>{item.quantity}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <Pagination
+                                page={inboundPageInfo.pageNum} 
+                                totalPage={inboundPageInfo.totalPageCount} 
+                                onPageChange={inboundPageMove}
+                            />
+                        </div>
+
+                        {/* 3-2. 출고 내역 (col-6) */}
+                        <div className="col-md-6">
+                            <NavLink 
+                                to={`/stock/outbound/${selectedItemId}`}
+                                className="btn btn-secondary mb-2" 
+                            >
+                                출고
+                            </NavLink>
+                            <table className="table table-striped text-center table-sm"> 
+                                <thead className="table-dark">
+                                    <tr>
+                                        <th>날짜</th>
+                                        <th>수량</th>
+                                        <th>사유</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {outboundPageInfo.list.map(item => (
+                                        <tr key={`out-${item.createdAt}`}>
+                                            <td>{item.createdAt}</td>
+                                            <td>{item.quantity}</td>
+                                            <td>{item.notes}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <Pagination
+                                page={outboundPageInfo.pageNum} 
+                                totalPage={outboundPageInfo.totalPageCount} 
+                                onPageChange={outboundPageMove}
+                            />
+                        </div>
+                    </div> 
+                </div> 
+            </div> 
         </div>
-
-        <NavLink to={`/stock/inbound/${selectedItemId}`}>입고</NavLink>
-        <table className="table table-striped text-center">
-            <thead className="table-dark">
-                <tr>
-                    <th>날짜</th>
-                    <th>수량</th>
-                </tr>
-            </thead>
-            <tbody>
-            {inboundPageInfo.list.map(item=>
-                <tr key={item.createdAt}>
-                    <td>{item.createdAt}</td>
-                    <td>{item.quantity}</td>
-                </tr>
-            )}  
-            </tbody>
-        </table>
-        <Pagination
-            page={inboundPageInfo.pageNum} 
-            totalPage={inboundPageInfo.totalPageCount} 
-            onPageChange={inboundPageMove}
-        />
-
-        <NavLink to={`/stock/outbound/${selectedItemId}`}>출고</NavLink>
-        <table className="table table-striped text-center">
-            <thead className="table-dark">
-                <tr>
-                    <th>날짜</th>
-                    <th>수량</th>
-                    <th>사유</th>
-                </tr>
-            </thead>
-            <tbody>
-            {outboundPageInfo.list.map(item=>
-                <tr key={item.createdAt}>
-                    <td>{item.createdAt}</td>
-                    <td>{item.quantity}</td>
-                    <td>{item.notes}</td>
-                </tr>
-            )}
-            </tbody>
-        </table>
-        <Pagination
-            page={outboundPageInfo.pageNum} 
-            totalPage={outboundPageInfo.totalPageCount} 
-            onPageChange={outboundPageMove}
-        />
-    </>
+    );
 }
 
 export default StockList;

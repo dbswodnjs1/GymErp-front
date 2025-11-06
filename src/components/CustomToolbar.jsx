@@ -11,11 +11,6 @@ function CustomToolbar({ label, onNavigate, onView, isAdmin = false, onAdminTest
       <span className="fw-bold">{label}</span>
 
       <div className="d-flex align-items-center">
-        {isAdmin && (
-          <button className="btn btn-danger btn-sm me-2" onClick={onAdminTest} title="관리자만 보임(테스트)">
-            관리자 테스트
-          </button>
-        )}
         <button className="btn btn-outline-dark btn-sm me-1" onClick={() => onView("month")}>Month</button>
         <button className="btn btn-outline-dark btn-sm me-1" onClick={() => onView("week")}>Week</button>
         <button className="btn btn-outline-dark btn-sm" onClick={() => onView("day")}>Day</button>

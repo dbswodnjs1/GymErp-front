@@ -30,15 +30,9 @@ function ScheduleCalendar({ events, onSelectSlot, onSelectEvent, isAdmin = false
       setCurrentDate(focusDate);
     }
   }, [focusDate]);
-
-  // 관리자 테스트 클릭
-  const handleAdminTest = () => {
-    alert("관리자 테스트 버튼 클릭!");
-  };
-
   // 툴바에 isAdmin/핸들러 주입
   const Toolbar = (props) => (
-    <CustomToolbar {...props} isAdmin={isAdmin} onAdminTest={handleAdminTest} />
+    <CustomToolbar {...props} isAdmin={isAdmin}  />
   );
 
   return (

@@ -60,7 +60,7 @@ export default function BsNavBar() {
 
   return (
     <>
-      <Navbar bg="transparent" variant="dark" className="shadow-0 w-100 m-0" style={{ height: 56 }}>
+      <Navbar bg="dark" variant="dark" className="shadow-0 w-100 m-0" style={{ height: 56}}>
         <Container fluid>
           {/* <Navbar.Brand as={NavLink} to="/">GYM</Navbar.Brand> */}
 

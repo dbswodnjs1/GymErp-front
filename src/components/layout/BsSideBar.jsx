@@ -67,7 +67,7 @@ export default function BsSideBar() {
       }}
     >
       {/* 상단 브랜드 */}
-      <div className="p-3 border-bottom border-secondary">
+      <div className="px-3 border-bottom border-secondary d-flex align-items-center" style={{ height: 56 }}>
         <NavLink to="/" className="text-decoration-none text-white d-flex align-items-center">
           <span className="fs-4 fw-bold">Gym</span>
         </NavLink>
@@ -92,6 +92,7 @@ export default function BsSideBar() {
           <DropdownMenu icon="people" title="직원">
             <SubMenuItem to="/emp" icon="table" text="직원목록"/>
             <SubMenuItem to="/schedule" icon="calendar-event" text="일정관리"/>
+            <SubMenuItem to="attendance/my" icon="clock" text="출퇴근관리"/>
           </DropdownMenu>
           <DropdownMenu icon="people-fill" title="회원">
             <SubMenuItem to="/member" icon="table" text="회원목록" />

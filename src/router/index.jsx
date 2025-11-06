@@ -10,10 +10,10 @@ import EmpDetail from "../pages/EmpDetail.jsx";
 import EmpEdit from "../pages/EmpEdit.jsx";
 import EmpAttendanceMy from "../pages/EmpAttendance/myAttendance.jsx";
 import SchedulePage from "../pages/SchedulePage.jsx";
+import ProductList from "../pages/Product/ProductList.jsx";
 
-import MemberList from "../pages/MemberList.jsx";
-import MemberDetail from "../pages/MemberDetail.jsx";
-import MemberEdit from "../pages/MemberEdit.jsx";
+import MembersList from "../pages/Members/MembersList.jsx";
+
 import SalesItemList from "../pages/Sales/SalesItemList.jsx";
 import SalesItemCreate from "../pages/Sales/SalesItemCreate.jsx";
 import SalesServiceCreate from "../pages/Sales/SalesServiceCreate.jsx";
@@ -30,6 +30,7 @@ import PostList from "../pages/PostList.jsx";
 import PostAdd from "../pages/PostAdd.jsx";
 import PostEdit from "../pages/PostEdit.jsx";
 import PostView from "../pages/PostView.jsx";
+
 
 
 
@@ -68,20 +69,17 @@ const router = createBrowserRouter([
       { path: "product", element: <ProductList /> },
       { path: "product/:itemType/:itemId", element: <ProductDetail /> },
       { path: "product/create", element: <ProductCreate /> },
-      { path: "product/edit/:itemType/:itemId", element: <ProductUpdate /> },
+      { path: "product/edit/:productId", element: <ProductUpdate /> },
+      { path: "service/edit/:serviceId", element: <ProductUpdate /> },
       { path: "stock/inbound", element: <StockInbound /> },
+      { path: "member", element: <MembersList /> },
+      { path: "product/edit/:itemType/:itemId", element: <ProductUpdate /> },
       { path: "stock", element: <StockList/> },
       { path: "stock/inbound/:productId", element: <StockInbound /> },
       { path: "stock/outbound/:productId", element: <StockOutbound /> },
-      { path: "member", element: <MemberList /> },
-      { path: "member/:memNum", element: <MemberDetail /> },
-      { path: "member/edit/:memNum", element: <MemberEdit /> },
       { path: "sales/salesitemlist", element: <SalesItemList /> },
       { path: "sales/salesitemcreate", element: <SalesItemCreate /> },
       { path: "sales/salesservicecreate", element: <SalesServiceCreate /> },
-      { path: "member", element: <MemberList /> },
-      { path: "member/:memNum", element: <MemberDetail /> },
-      { path: "member/edit/:memNum", element: <MemberEdit /> },
       { path: "post", element: <PostList /> },
       { path: "post/new", element: <PostAdd /> },
       { path: "post/edit/:postId", element: <PostEdit /> },

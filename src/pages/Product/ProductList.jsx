@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation, NavLink } from 'react-router-dom';
 import cn from 'classnames';
 
 import ProductListComponent from '../../components/ProductListComponent';
@@ -189,28 +189,66 @@ function ProductList() {
     };
 
     return (
-        <>
-            <button className={cn("btn", "btn-lg", { "btn-dark": currentTab == "PRODUCT", "btn-light": currentTab == "SERVICE" })} onClick={() => handleTabChange('PRODUCT')}>실물 상품</button>
-            <button className={cn("btn", "btn-lg", { "btn-dark": currentTab == "SERVICE", "btn-light": currentTab == "PRODUCT" })} onClick={() => handleTabChange('SERVICE')}>서비스 상품</button>
-
-            <div className="row mt-3">
-                <div className="col-md-3 mt-3">
-                    <CategoryCheckbox
-                        codeAId={currentTab}
-                        checkedList={selectedCategories}
-                        onChange={handleCategoryChange}
-                    />
-                    <ProductSearchBar
-                        keyword={search.keyword}
-                        onSearchChange={handleSearchChange}
-                        onSearchClick={handleSearchClick}
-                    />
-
+        <div className="container-fluid mt-3"> {/* 전체 컨테이너 */}
+            
+            {/* 2. 상단 영역: 탭 버튼 (왼쪽) + 상품 등록 버튼 (오른쪽) */}
+            <div className="d-flex justify-content-between align-items-start mb-3">
+                {/* 2-1. 탭 버튼 */}
+                <div>
+                    <button 
+                        className={cn("btn", "btn-lg", {"btn-dark": currentTab === "PRODUCT", "btn-light": currentTab === "SERVICE"})} 
+                        onClick={() => handleTabChange('PRODUCT')}
+                    >
+                        실물 상품
+                    </button>
+                    <button 
+                        className={cn("btn", "btn-lg", {"btn-dark": currentTab === "SERVICE", "btn-light": currentTab === "PRODUCT"})} 
+                        onClick={() => handleTabChange('SERVICE')}
+                    >
+                        서비스 상품
+                    </button>
                 </div>
-                <div className="col-3">
-                    <button className="btn btn-primary mt-3" onClick={handleCreateClick}>상품 등록</button>
+                
+                {/* 2-2. 상품 등록 버튼 (오른쪽 정렬됨) */}
+                <div>
+                    <NavLink
+                        to="/product/create" 
+                        className="btn btn-primary"
+                    >
+                        상품 등록
+                    </NavLink>
                 </div>
-                <div className="col-md-9 mt-3">
+            </div>
+
+            {/* 3. 메인 영역: 왼쪽 사이드바 + 오른쪽 컨텐츠 */}
+            <div className="row g-3 align-items-center">
+                
+                {/* 3-1. 왼쪽 사이드바 (col-md-3) */}
+                <div className="col-md-3">
+                    
+                    {/* 3-1a. 체크박스 영역 (흰색 박스) */}
+                    <div className="p-3 mb-3 border rounded shadow-sm bg-white">
+                        <div className="pt-3">
+                            <CategoryCheckbox
+                                codeAId={currentTab}
+                                checkedList={selectedCategories}
+                                onChange={handleCategoryChange}
+                            />
+                        </div>
+                        <div className="pt-3">
+                            <ProductSearchBar
+                                keyword={search.keyword}
+                                onSearchChange={handleSearchChange}
+                                onSearchClick={handleSearchClick}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="row g-3 align-items-end">
+                {/* 3-2. 오른쪽 메인 컨텐츠 (col-md-9) */}
+                <div>
+                    {/* 상품 목록 테이블 */}
                     <ProductListComponent
                         pageInfo={pageInfo}
                         onPageChange={pageMove}
@@ -218,10 +256,11 @@ function ProductList() {
                         columns={productColumns}
                         onSort={handleSort}
                         sortConfig={sortConfig}
+                        onRowClick={handleRowClick} 
                     />
                 </div>
             </div>
-        </>
+        </div>
     );
 }
 

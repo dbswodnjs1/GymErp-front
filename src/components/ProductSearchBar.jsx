@@ -12,8 +12,7 @@ function ProductSearchBar({ keyword, onSearchChange, onSearchClick }) {
                 placeholder="검색어 입력..."
             />
             <button onClick={onSearchClick} type="button" className="btn btn-outline-secondary">
-                <i className="bi bi-search"></i>
-                <span className="visually-hidden">검색</span>
+                검색
             </button> 
         </div>
     );
