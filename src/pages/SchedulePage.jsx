@@ -91,19 +91,19 @@ const isAdminRole = (r) => (r || "").toUpperCase().includes("ADMIN");
 export default function SchedulePage() {
   const [events, setEvents] = useState([]);
   const [focusDate, setFocusDate] = useState(null);
-
+  const [formMode, setFormMode] = useState('create'); // 'create' | 'view' | 'edit'
   const [showModal, setShowModal] = useState(false);         // 등록/수정 모달 표시
   const [modalKey, setModalKey] = useState(0);               // 강제 리마운트 키
-
+  
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [editData, setEditData] = useState(null);
   const [clickedDate, setClickedDate] = useState(null);
 
-  // ✅ MOD: 일정 목록 모달 상태 + 대기 편집 데이터
+  // MOD: 일정 목록 모달 상태 + 대기 편집 데이터
   const [showListModal, setShowListModal] = useState(false);
   const [listDate, setListDate] = useState(null);
-  const [pendingEdit, setPendingEdit] = useState(null);       // ✅ MOD: 닫힘 후 열기용 버퍼
+  const [pendingEdit, setPendingEdit] = useState(null);       // MOD: 닫힘 후 열기용 버퍼
 
   // 직원 상세 → 일정으로 넘어올 때 URL 파라미터로 empNum/empName 받기
   const location = useLocation();
@@ -186,41 +186,48 @@ export default function SchedulePage() {
   };
 
   /* ============================================ */
-  // ✅ MOD: +N 클릭 시 해당 날짜의 목록 모달 열기
+  // MOD: +N 클릭 시 해당 날짜의 목록 모달 열기
   const openListForDate = (dateObj) => {
     setListDate(dateObj);
     setShowListModal(true);
   };
 
-  // ✅ MOD: 해당 날짜의 이벤트 목록
+  // MOD: 해당 날짜의 이벤트 목록
   const eventsOfThatDay = useMemo(() => {
     if (!listDate) return [];
     return events.filter((ev) => isSameDay(new Date(ev.start), listDate));
   }, [events, listDate]);
 
-  // ✅ MOD: 목록 모달에서 "편집" → 닫힘 완료 후 등록 모달 열기
+  // MOD: 목록 모달에서 "편집" → 닫힘 완료 후 등록 모달 열기
   const handleOpenEdit = (evEditData) => {
     setPendingEdit(evEditData);          // 닫힌 뒤 열기 위해 보관
+    setFormMode('view');
     setShowListModal(false);             // 목록 모달 닫기 (onExited에서 열림)
   };
 
   // 상세 보기 → 삭제
-  const handleDelete = async () => {
-    if (!selectedEvent?.shNum) {
-      alert("삭제할 일정의 shNum이 없습니다.");
-      return;
-    }
-    if (!window.confirm("정말 이 일정을 삭제하시겠습니까?")) return;
+  const handleDelete = async (data) => {
+  const shNum = data?.shNum ?? editData?.shNum ?? selectedEvent?.shNum;
+   if (!shNum) {
+     alert("삭제할 일정의 shNum이 없습니다.");
+     return;
+   }
+   if (!window.confirm("정말 이 일정을 삭제하시겠습니까?")) return;
     try {
-      const url = `http://localhost:9000/v1/schedule/delete/${selectedEvent.shNum}`;
-      await axios.delete(url);
-      alert("일정이 삭제되었습니다.");
-      setShowDetailModal(false);
-      setSelectedEvent(null);
-      await loadSchedules();
+     await axios.delete(`http://localhost:9000/v1/schedule/delete/${shNum}`);
+     alert("일정이 삭제되었습니다.");
+     await loadSchedules();
     } catch (err) {
-      console.error("[일정 삭제 실패]:", err);
-      alert("삭제 중 오류가 발생했습니다.");
+     console.error("[일정 삭제 실패]:", err);
+     alert("삭제 중 오류가 발생했습니다.");
+    } finally {
+     // 어떤 경로로 열렸든 모두 정리
+     if (showDetailModal) setShowDetailModal(false);
+     if (showModal) setShowModal(false);
+     setSelectedEvent(null);
+     setEditData(null);
+     setClickedDate(null);
+     setFormMode('create');
     }
   };
 
@@ -238,6 +245,7 @@ export default function SchedulePage() {
     setShowModal(false);              // 반드시 false로 내려 언마운트
     setEditData(null);
     setClickedDate(null);
+    setFormMode('create');
   };
 
   /** 등록/수정 저장 완료 후: 닫고 새로고침 */
@@ -245,12 +253,13 @@ export default function SchedulePage() {
     setShowModal(false);
     setEditData(null);
     setClickedDate(null);
+    setFormMode('create');
     await loadSchedules();
   };
 
   return (
     <div>
-      {/* ✅ MOD: 헤더(아이콘+현재 날짜) */}
+      {/* MOD: 헤더(아이콘+현재 날짜) */}
       <div className="d-flex align-items-center gap-2 mb-3">
         <span className="cal-badge"><i className="bi bi-calendar2-week" /></span>
         <div className="d-flex flex-column">
@@ -273,7 +282,6 @@ export default function SchedulePage() {
         </>
       )} 
       
-      
       {/* 캘린더 */}
       <ScheduleCalendar
         events={events}
@@ -281,17 +289,17 @@ export default function SchedulePage() {
         onSelectEvent={handleSelectEvent}
         isAdmin={isAdmin}
         focusDate={focusDate}
-        onShowMore={(eventsInDay, date) => openListForDate(date)}  // ✅ MOD
+        onShowMore={(eventsInDay, date) => openListForDate(date)}  // MOD
       />
 
-      {/* ✅ MOD: 일정 목록 모달(+N 클릭 시) */}
+      {/* MOD: 일정 목록 모달(+N 클릭 시) */}
       <ScheduleOpenModal
         show={showListModal}
         date={listDate}
         events={eventsOfThatDay}
         onClose={() => setShowListModal(false)}
         onEdit={handleOpenEdit}
-        onExited={() => {                          // ✅ MOD: 닫힘 완료 후 열기
+        onExited={() => {                          // MOD: 닫힘 완료 후 열기
           if (!pendingEdit) return;
           setEditData(pendingEdit);
           setClickedDate(pendingEdit.startTime?.slice(0, 10) || null);
@@ -309,6 +317,9 @@ export default function SchedulePage() {
           empName={empName}
           editData={editData}
           selectedDate={clickedDate}
+          mode={formMode}
+          onEdit={()=> setFormMode('edit')} // 조회 -> 수정
+          onDelete={handleDelete}
           onSaved={handleSaved}      // 저장 후 닫고, 목록 새로고침
           onClose={handleCloseEditModal}  // 닫기 버튼/ESC/X 처리
         />

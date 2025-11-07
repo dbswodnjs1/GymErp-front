@@ -90,7 +90,7 @@ export default function PostList() {
       <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
         <h2 className="m-0">게시판</h2>
 
-        <div className="d-flex align-items-center gap-2 flex-wrap" style={{ minWidth: 480 }}>
+        <div className="d-flex align-items-center gap-2 flex-wrap" style={{ minWidth: 1000 }}>
           {/* 🔽 검색 필터 셀렉트 */}
           <select
             className="form-select"
@@ -110,7 +110,6 @@ export default function PostList() {
             placeholder="검색어 입력..."
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            // ❌ Enter로 바로 검색 안 되게 제거하려면 이 줄 삭제
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
 

@@ -1,19 +1,18 @@
 /* src/pages/EmpAttendance/attendance.css */
 
-/* 히어로 */
+/* 히어로: 보라 → 회색 톤 */
 .att-hero{
   display:flex; align-items:center; justify-content:space-between;
   padding:18px 20px; border-radius:16px; color:#fff;
-  background: linear-gradient(135deg,#4f46e5 0%,#7c3aed 60%, #1f2937 110%);
-  box-shadow: 0 8px 20px rgba(31,41,55,.25);
+  background: linear-gradient(135deg,#6c757d 0%, #000000 60%, #000000 110%); /* ← 변경 */
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.322); /* 살짝 부드럽게 */
 }
+
 .att-hero__left{display:flex; flex-direction:column; gap:10px;}
 .att-hero__title{font-size:1.4rem; font-weight:700; letter-spacing:-.2px;}
 .att-hero__meta .badge{font-weight:600; padding:.5rem .7rem;}
 .att-hero__actions{margin-top:4px;}
-.att-hero__right .att-illo{
-  font-size:44px; opacity:.9; filter: drop-shadow(0 2px 8px rgba(0,0,0,.25));
-}
+.att-hero__right{ display:none; }  /* ← 추가 */
 
 /* 카드 */
 .att-card{

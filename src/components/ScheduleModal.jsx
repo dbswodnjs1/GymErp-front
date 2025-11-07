@@ -186,22 +186,27 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate, readOnly=fals
     }
 
     if (editData) {
+      const st = editData.startTime?.slice(11, 16) || "";
+      const et = editData.endTime?.slice(11, 16) || "";
       setForm({
         memNum: toStrId(editData.memNum),
         empNum: toStrId(editData.empNum || empNum),
         empName: editData.empName || empName || "",
         date: editData.startTime?.slice(0, 10) || selectedDate || "",
-        startTime: editData.startTime?.slice(11, 16) || "",
-        endTime: editData.endTime?.slice(11, 16) || "",
+        startTime: st,
+        endTime: et,
         memo: editData.memo || "",
       });
-      setEndDirty(true);
+      // 기존 일정이 정확히 +60분이면 '자동값'으로 간주 → 이후에도 자동 갱신 유지
+      setEndDirty(!(st && et && et === addMinutesToTime(st, 60)));
     } else {
       setForm((prev) => ({ ...prev, date: selectedDate || "" }));
       setEndDirty(false);
     }
 
-    axios.get("http://localhost:9000/v1/member").then((res) => setMembers(sortByKoName(res.data))).catch((err) => console.error("회원 목록 불러오기 실패:", err));
+    axios.get("http://localhost:9000/v1/member")
+      .then((res) => setMembers(sortByKoName(res.data)))
+      .catch((err) => console.error("회원 목록 불러오기 실패:", err));
   }, [empNum, empName, editData, selectedDate]);
 
   const onChange = (e) => {
@@ -210,7 +215,13 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate, readOnly=fals
       const next = { ...prev, [name]: value };
       if (name === "startTime") {
         if (!value) next.endTime = "";
-        else if (!endDirty) next.endTime = addMinutesToTime(value, 60);
+        const newAuto = addMinutesToTime(value, 60);
+        const prevAuto = prev.startTime ? addMinutesToTime(prev.startTime, 60) : "";
+        const userCustomizedEnd =
+          endDirty && prev.endTime && prev.endTime !== prevAuto; // 진짜 수동 변경?
+        if (!userCustomizedEnd) {
+          next.endTime = newAuto;
+        }
       }
       return next;
     });
@@ -363,10 +374,6 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate, readOnly=fals
     </>
   );
 }
-
-
-
-
 
 
 
