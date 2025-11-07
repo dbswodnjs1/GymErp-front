@@ -22,6 +22,7 @@ import ProductDetail from "../pages/Product/ProductDetail.jsx";
 import StockList from "../pages/Product/StockList.jsx";
 import StockInbound from "../pages/Product/StockInbound.jsx";
 import StockOutbound from "../pages/Product/StockOutbound.jsx";
+import ProductList from "../pages/Product/ProductList.jsx";
 
 import PostList from "../pages/PostList.jsx";
 import PostAdd from "../pages/PostAdd.jsx";
