@@ -1,5 +1,4 @@
 // src/components/ScheduleCalendar.jsx
-
 import React, { useEffect, useState, useMemo } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
@@ -8,7 +7,7 @@ import CustomToolbar from "./CustomToolbar";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./css/ScheduleCalendar.css";
-import ScheduleOpenModal from "./ScheduleOpenModal"; // ✅ 추가됨
+import ScheduleOpenModal from "./ScheduleOpenModal";
 
 /* ====== date-fns localizer ====== */
 const locales = { ko };
@@ -23,8 +22,8 @@ const localizer = dateFnsLocalizer({
 /* ====== 주말 배경 ====== */
 const weekendPropGetter = (date) => {
   const d = date.getDay(); // 0=Sun, 6=Sat
-  if (d === 0) return { style: { background: "#fff1f1" } }; // 일
-  if (d === 6) return { style: { background: "#f1f6ff" } }; // 토
+  if (d === 0) return { style: { background: "#ffffffff" } }; // 일
+  if (d === 6) return { style: { background: "#ffffffff" } }; // 토
   return {};
 };
 
@@ -33,6 +32,26 @@ const ymd = (d) =>
   `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(
     d.getDate()
   ).padStart(2, "0")}`;
+
+/* ✅ 같은 날짜인지 비교 */
+const isSameDate = (a, b) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
+/* ✅ 월 뷰 내용 레이어(date cell)용 래퍼: 오늘이면 클래스 부여 */
+function TodayCellWrapper({ value, children }) {
+  const isToday = isSameDate(new Date(value), new Date());
+  if (!isToday) return children;
+
+  // children = 실제 .rbc-date-cell 요소
+  return React.cloneElement(
+    React.Children.only(children),
+    {
+      className: `${children.props.className || ""} is-today`,
+    }
+  );
+}
 
 /* ====== 컴포넌트 ====== */
 function ScheduleCalendar({
@@ -129,15 +148,27 @@ function ScheduleCalendar({
     };
   }, [currentYear]);
 
-  // ✅ 주말 + 공휴일 배경 강조
+  /* ✅ 주말 + 공휴일 + '오늘' 강조 */
   const dayPropGetter = (date) => {
     const base = weekendPropGetter(date);
     const key = ymd(date);
+
+    // 오늘이면 커스텀 클래스 추가 (월/주/일 공통)
+    const extraClass = isSameDate(date, new Date()) ? " is-today" : "";
+
     if (holidaySet.has(key)) {
       const holidayBg = { background: "#fff7d6" };
-      return { ...base, style: { ...(base.style || {}), ...holidayBg } };
+      return {
+        ...base,
+        className: (base.className || "") + extraClass,
+        style: { ...(base.style || {}), ...holidayBg },
+      };
     }
-    return base;
+
+    return {
+      ...base,
+      className: (base.className || "") + extraClass,
+    };
   };
 
   // ✅ 최종 렌더 이벤트: 기존 + 공휴일
@@ -184,7 +215,10 @@ function ScheduleCalendar({
         onView={setCurrentView}
         date={currentDate}
         onNavigate={setCurrentDate}
-        components={{ toolbar: Toolbar }}
+        components={{
+          toolbar: Toolbar,                 // ← 콤마 주의!
+          dateCellWrapper: TodayCellWrapper // 월 뷰 아래쪽 테두리 가림 방지
+        }}
         views={["month", "week", "day"]}
         defaultView="month"
         popup={false}
@@ -198,8 +232,6 @@ function ScheduleCalendar({
         date={more.date}
         events={more.events}
         onClose={() => setMore((s) => ({ ...s, show: false }))}
-        // 필요 시 편집 콜백 연결:
-        // onEdit={(payload) => { ...; setMore((s)=>({ ...s, show:false })); }}
         onExited={() => {}}
       />
     </>
