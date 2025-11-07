@@ -18,3 +18,9 @@
   border-radius: 6px;
   outline: none;
 }
+/* 월/주/일 공통: 오늘 날짜 배경 */
+.rbc-calendar .rbc-today,
+.rbc-month-view .rbc-day-bg.rbc-today {
+  background-color: #d8ecff !important;  
+}
+

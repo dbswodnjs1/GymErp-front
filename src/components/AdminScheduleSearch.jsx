@@ -21,6 +21,7 @@ export default function AdminScheduleSearch({ defaultPageSize = 20, onSearch }) 
   };
 
   return (
+
     <Form onSubmit={submit} className="mb-3">
       <Row className="gy-2 align-items-end">
         <Col md={2}>

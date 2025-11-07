@@ -25,7 +25,7 @@ function Login() {
 
         try {
             // api 서버에 로그인 요청 보내기
-            const response = await axios.post("api/v1/emp/login",
+            const response = await axios.post("/api/v1/emp/login",
                 {
                     empEmail : empEmail,
                     password: password

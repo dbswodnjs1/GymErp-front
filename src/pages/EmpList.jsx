@@ -4,7 +4,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import EmpModal from "../components/EmpModal";
 import SearchBar from "../components/SearchBar";
 import Pagination from "../components/Pagination";
-import MemberSearchModal from "../components/MemberSearchModal";
 
 function EmpList() {
   const [list, setList] = useState([]);
@@ -41,7 +40,7 @@ function EmpList() {
       : "ALL";
 
     const statusYN =
-    
+
       derivedStatus === "ACTIVE" ? "Y"
       : derivedStatus === "RESIGNED" ? "N"
       : "ALL";
@@ -55,7 +54,7 @@ function EmpList() {
       page,
       size: 10,
 
-      // ✅ 이름/연락처 검색이면 그대로, 상태 선택이면 type을 'status'로 고정
+      // 이름/연락처 검색이면 그대로, 상태 선택이면 type을 'status'로 고정
       type:
         (type === "name" || type === "phone")
           ? type
@@ -63,10 +62,10 @@ function EmpList() {
             ? "status"
             : "all",
 
-      // ✅ 키워드 있으면만 전송 (상태 검색과도 조합 가능)
+      // 키워드 있으면만 전송 (상태 검색과도 조합 가능)
       ...(kw && { keyword: kw }),
 
-      // ✅ 백엔드 어떤 키/값을 쓰든 한 번에 대응
+      // 백엔드 어떤 키/값을 쓰든 한 번에 대응
       status: statusWord,     // ACTIVE | RESIGNED | ALL
       empStatus: statusYN,    // Y | N | ALL
       employment: statusHR,   // EMPLOYED | RETIRED | ALL
@@ -112,8 +111,8 @@ function EmpList() {
             onKeywordChange={setKeyword}
             onSearch={onSearch}
           />
-          <button className="btn btn-success ms-3" onClick={() => setIsModalOpen(true)}>
-            직원 등록
+          <button className="btn btn-primary ms-3" onClick={() => setIsModalOpen(true)}>
+            + 직원 등록
           </button>
         </div>
       </div>
@@ -153,24 +152,6 @@ function EmpList() {
       </table>
 
       <Pagination page={page} totalPage={totalPage} onPageChange={setPage} />
-
-      <MemberSearchModal
-        show={showModal}
-        onHide={() => setShowModal(false)}
-        onSelect={(member) => {
-          setSelectedMember(member);
-          setShowModal(false);
-        }}
-      />
-      <button className="btn btn-outline-dark ms-2" onClick={() => setShowModal(true)}>
-        회원검색
-      </button>
-
-      {selectedMember && (
-        <div className="alert alert-info mt-3">
-          <strong>선택된 회원:</strong> {selectedMember.memName} ({selectedMember.memEmail})
-        </div>
-      )}
 
       <EmpModal show={isModalOpen} onClose={() => setIsModalOpen(false)} onSuccess={loadData} />
     </div>
