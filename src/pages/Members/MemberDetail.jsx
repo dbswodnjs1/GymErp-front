@@ -3,15 +3,15 @@
 // - 상세 정보 + 프로필 썸네일 표시(우상단) + URL 행(선택)
 // =============================================================
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../api/axiosConfig";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 export default function MemberDetail({ memNum, onBack, onEdit, onDelete }) {
-  const API_BASE = (import.meta?.env?.VITE_API_BASE) || (typeof window !== 'undefined' && window.API_BASE) || "http://localhost:9000";
+  const API_BASE = (import.meta?.env?.VITE_API_BASE) || (typeof window !== 'undefined' && window.API_BASE) || "/api";
   const [data, setData] = useState(null);
   const load = async () => {
     try {
-      const res = await axios.get(`http://localhost:9000/v1/member/${memNum}`);
+      const res = await api.get(`/v1/member/${memNum}`);
       setData(res.data);
     } catch (e) {
       console.error('회원 상세 조회 실패:', e);
@@ -54,7 +54,6 @@ export default function MemberDetail({ memNum, onBack, onEdit, onDelete }) {
               </td>
             </tr>
             <tr><th>잔여 PT</th><td>{data.ptRemain ?? 0}</td></tr>
-            <tr><th>프로필</th><td>{data.memProfile ? data.memProfile : '-'}</td></tr>
             <tr><th>등록/수정일</th><td>{(data.memCreated?.slice?.(0,10) || '-') + ' / ' + (data.memUpdated?.slice?.(0,10) || '-')}</td></tr>
           </tbody>
         </table>

@@ -51,7 +51,7 @@ export default function BsNavBar() {
       return;
     }
 
-    alert("비밀번호 변경 실패: " + msg);
+    alert("기존 비밀번호가 일치하지 않습니다. ");
   } finally {
     setPwBusy(false);
   }

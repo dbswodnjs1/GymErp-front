@@ -15,7 +15,8 @@ function TotalSalesChart() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get("/v1/analytics/sales/total");
+        const res = await axios.get("/api/v1/analytics/sales/total");
+        console.log("✅ 실제 응답 구조:", res.data);
         const list = (res.data || []).map((d) => [
           d.LABEL || d.label,
           Number(d.TOTAL_SALES || d.total_sales || 0),
@@ -43,8 +44,8 @@ function TotalSalesChart() {
       options3d: { enabled: true, alpha: 45, beta: 0, depth: 50, viewDistance: 40 },
       height: 420,
       width: 520, // 그래프 자체 살짝 확대
-      marginTop: 10,
-      marginBottom: 40,
+      marginTop: -50,
+      marginBottom: 70,
       spacingRight: 80, // 범례 짤림 방지
     },
 
@@ -65,11 +66,11 @@ function TotalSalesChart() {
         depth: 50,
         size: "85%",
         center: ["45%", "52%"],
-        showInLegend: true,
+        showInLegend: false,
         cursor: "pointer",
         dataLabels: {
           enabled: true,
-          distance: -35, // ✅ 중심보다 살짝 위로 띄움
+          distance: -50, // ✅ 중심보다 살짝 위로 띄움
           y: -8, // ✅ 3D 깊이 때문에 잘리는 것 보정
           style: {
             fontSize: "14px",
@@ -122,19 +123,58 @@ function TotalSalesChart() {
 
   return (
     <ChartWrapper title="전체 매출 그래프">
-      {/* ✅ 컴포넌트 자체 폭 제한 (그래프는 확대됨) */}
       <div
         style={{
           display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: 380,
-          width: "500px", // ✅ 컴포넌트 폭 자체 축소
+          alignItems: "fles-start",
+          justifyContent: "space-between", // ✅ 그래프와 범례를 양옆 배치
+          width: "96%",                     // ✅ 부모 대비 폭 축소
+          maxWidth: "900px",                // ✅ 대시보드 내 균형 잡기
           margin: "0 auto",
-          overflow: "hidden", // ✅ 잘림 방지
         }}
       >
-        <HighchartsReact highcharts={Highcharts} options={options} />
+        {/* ✅ 그래프 영역 */}
+        <div
+          style={{
+            flex: "0 0 65%", // 🔹 전체의 약 65%만 차지
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: 380,
+            overflow: "hidden",
+          }}
+        >
+          <HighchartsReact highcharts={Highcharts} options={options} />
+        </div>
+
+        {/* ✅ 범례를 별도 수동 배치 (기존 legend 숨김 + 직접 구현해도 OK) */}
+        <div
+          style={{
+            marginTop: "130px",
+            flex: "0 0 30%",
+            paddingLeft: "0.5rem",
+            display: "flex",
+            flexDirection: "column",
+            gap: "4px",
+          }}
+        >
+          {data.map((d, i) => (
+            <div key={i} style={{ fontSize: "13px", whiteSpace: "nowrap" }}>
+              <span
+                style={{
+                  display: "inline-block",
+                  width: 12,
+                  height: 12,
+                  backgroundColor:
+                    colorMap[d[0].toUpperCase()] || "#90CAF9",
+                  borderRadius: "50%",
+                  marginRight: 6,
+                }}
+              ></span>
+              {d[0]} ({d[1].toLocaleString()}원)
+            </div>
+          ))}
+        </div>
       </div>
     </ChartWrapper>
   );

@@ -5,19 +5,20 @@
 // =============================================================
 import { useEffect, useState } from "react";
 import axios from "axios";
+import api from "../../api/axiosConfig";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 // 백엔드 베이스 URL (.env의 VITE_API_BASE 없으면 기본값)
-const API_BASE = import.meta?.env?.VITE_API_BASE || "http://localhost:9000";
+const API_BASE = import.meta?.env?.VITE_API_BASE || "/api";
 // 파일명 → 표시용 절대 URL 변환
 const resolveProfileUrl = (v) => (v ? (v.startsWith('http') ? v : `${API_BASE}/upload/${v}`) : null);
 
-const PROFILE_UPLOAD_URL_U = (memNum) => `http://localhost:9000/v1/member/upload/${memNum}`;
+const PROFILE_UPLOAD_URL_U = (memNum) => `/v1/member/upload/${memNum}`;
 async function uploadProfileFileU(file, memNum) {
   if (!file) return null;
   const fd = new FormData();
   fd.append("file", file);
-  const res = await axios.post(PROFILE_UPLOAD_URL_U(memNum), fd, {
+  const res = await api.post(PROFILE_UPLOAD_URL_U(memNum), fd, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return res.data || null;
@@ -41,7 +42,7 @@ export default function MemberUpdate({ memNum, onCancel, onUpdated }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await axios.get(`http://localhost:9000/v1/member/${memNum}`);
+        const res = await api.get(`/v1/member/${memNum}`);
         const d = res.data || {};
         setForm({
           memName: d.memName || '',
@@ -112,7 +113,7 @@ export default function MemberUpdate({ memNum, onCancel, onUpdated }) {
         const url = await uploadProfileFileU(profileFile, memNum);
         if (url) memProfileUrl = url;
       }
-      await axios.put(`http://localhost:9000/v1/member/${memNum}`, { ...form, memProfile: memProfileUrl });
+      await api.put(`/v1/member/${memNum}`, { ...form, memProfile: memProfileUrl });
       alert('회원 정보가 수정되었습니다.');
       onUpdated?.();
     } catch (e) {

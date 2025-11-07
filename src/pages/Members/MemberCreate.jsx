@@ -6,17 +6,17 @@
 //   3) 응답 URL을 memProfile 로 PUT /v1/member/{memNum}
 // =============================================================
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../api/axiosConfig";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 // 업로드 엔드포인트 (백엔드 경로와 맞추세요)
-const PROFILE_UPLOAD_URL = (memNum) => `http://localhost:9000/v1/member/upload/${memNum}`;
+const PROFILE_UPLOAD_URL = (memNum) => `/v1/member/upload/${memNum}`;
 
 async function uploadProfileFile(file, memNum) {
   if (!file) return null;
   const fd = new FormData();
   fd.append("file", file);
-  const res = await axios.post(PROFILE_UPLOAD_URL(memNum), fd, {
+  const res = await api.post(PROFILE_UPLOAD_URL(memNum), fd, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return res.data || null;
@@ -107,7 +107,7 @@ export default function MemberCreate({ onCancel, onCreated }) {
         try {
           const key = payload.memEmail || payload.memPhone || payload.memName;
           if (!key) return null;
-          const r = await axios.get('http://localhost:9000/v1/member/search', { params: { keyword: key } });
+          const r = await api.get('/v1/member/search', { params: { keyword: key } });
           const list = Array.isArray(r.data) ? r.data : [];
           // 이름/이메일이 정확히 같은 항목 중 가장 큰 memNum을 선택(동명이인/경합 최소화)
           const cand = list.filter(m => (
@@ -121,7 +121,7 @@ export default function MemberCreate({ onCancel, onCreated }) {
       };
 
       // 1) 회원 생성 (기본정보)
-      const createRes = await axios.post('http://localhost:9000/v1/member', { ...form, memProfile: null });
+      const createRes = await api.post('/v1/member', { ...form, memProfile: null });
       let newId = createRes?.data?.memNum ?? null; // 백엔드가 memNum을 반환하면 사용
       if (!newId) {
         // 반환이 없으면 검색 엔드포인트로 보강 식별(임시 대안)

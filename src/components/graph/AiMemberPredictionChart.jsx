@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  LabelList, // ✅ 추가
 } from "recharts";
 import ChartWrapper from "./ChartWrapper";
 
@@ -22,7 +23,7 @@ function AiMemberPredictionChart() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await axios.get("/v1/analytics/ai/members");
+        const res = await axios.get("/api/v1/analytics/ai/members");
         setData(res.data || []);
       } catch (err) {
         console.error("AI 회원 예측 데이터 로드 실패:", err);
@@ -50,23 +51,25 @@ function AiMemberPredictionChart() {
     );
 
   // ✅ 월 보정 + 예측 라벨 처리
-  const processedData = data.map((d) => {
-    const rawMonth = d.month || d.MONTH || "";
-    const dataType = d.data_type || d.DATA_TYPE || "";
-    let adjustedMonth = rawMonth;
-    if (dataType === "예측") {
-      const dateObj = new Date(rawMonth + "-01");
-      dateObj.setMonth(dateObj.getMonth() - 1);
-      adjustedMonth = `${dateObj.getFullYear()}-${String(
-        dateObj.getMonth() + 1
-      ).padStart(2, "0")}`;
-    }
-    return {
-      month: adjustedMonth,
-      predictedCount: d.predictedCount || d.PREDICTEDCOUNT,
-      type: dataType,
-    };
-  }).sort((a, b) => a.month.localeCompare(b.month));
+  const processedData = data
+    .map((d) => {
+      const rawMonth = d.month || d.MONTH || "";
+      const dataType = d.data_type || d.DATA_TYPE || "";
+      let adjustedMonth = rawMonth;
+      if (dataType === "예측") {
+        const dateObj = new Date(rawMonth + "-01");
+        dateObj.setMonth(dateObj.getMonth() - 1);
+        adjustedMonth = `${dateObj.getFullYear()}-${String(
+          dateObj.getMonth() + 1
+        ).padStart(2, "0")}`;
+      }
+      return {
+        month: adjustedMonth,
+        predictedCount: d.predictedCount || d.PREDICTEDCOUNT,
+        type: dataType,
+      };
+    })
+    .sort((a, b) => a.month.localeCompare(b.month));
 
   return (
     <ChartWrapper title="연말 회원수 예측 그래프">
@@ -103,6 +106,17 @@ function AiMemberPredictionChart() {
             }}
           />
           <Bar dataKey="predictedCount">
+            {/* ✅ 각 막대 위에 회원 수 표시 */}
+            <LabelList
+              dataKey="predictedCount"
+              position="top"
+              formatter={(v) => `${v.toLocaleString()}명`}
+              style={{
+                fontSize: "12px",
+                fill: "#333",
+                fontWeight: "600",
+              }}
+            />
             {processedData.map((d, idx) => {
               const color =
                 d.month.includes("2025-11") || d.month.includes("2025-12")

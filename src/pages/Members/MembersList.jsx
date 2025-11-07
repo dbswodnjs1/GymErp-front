@@ -4,7 +4,7 @@
 // - 우측: 모드별 패널 (상세/등록/수정/삭제)
 // =============================================
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import api from "../../api/axiosConfig";
 import 'bootstrap/dist/css/bootstrap.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import MemberDetail from "./MemberDetail.jsx";
@@ -30,7 +30,7 @@ export default function MembersList() {
     setLoading(true);
     try {
       // 항상 전체를 받아와서(ALL) 클라이언트에서 상태/검색/정렬 처리
-      const res = await axios.get('http://localhost:9000/v1/member');
+      const res = await api.get('/v1/member');
       setMembers(res.data || []);
     } catch (err) {
       console.error('회원 목록 조회 실패:', err);

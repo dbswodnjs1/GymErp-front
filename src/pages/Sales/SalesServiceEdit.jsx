@@ -46,7 +46,7 @@ function SalesServiceEdit() {
       setError("");
 
       try {
-        const res = await axios.get(`/v1/sales/services/${id}`);
+        const res = await axios.get(`/api/v1/sales/services/${id}`);
 
         const data =
           res?.data?.serviceName !== undefined
@@ -66,7 +66,7 @@ function SalesServiceEdit() {
         let memName = "";
         if (data.memNum) {
           try {
-            const memberRes = await axios.get(`/v1/member/${data.memNum}`);
+            const memberRes = await axios.get(`/api/v1/member/${data.memNum}`);
             memName = memberRes.data.memName || "";
           } catch {
             memName = "(탈퇴 회원)";
@@ -77,7 +77,7 @@ function SalesServiceEdit() {
         let empName = "";
         if (data.empNum) {
           try {
-            const empRes = await axios.get(`/v1/emp/${data.empNum}`);
+            const empRes = await axios.get(`/api/v1/emp/${data.empNum}`);
             empName = empRes.data.empName || "";
           } catch {
             empName = "(퇴사자)";
@@ -157,7 +157,7 @@ function SalesServiceEdit() {
       };
 
       console.log("전송 payload:", payload);
-      const res = await axios.put(`/v1/sales/services/${id}`, payload);
+      const res = await axios.put(`/api/v1/sales/services/${id}`, payload);
       alert(res.data.message || "수정이 완료되었습니다!");
       navigate(`/sales/salesservicedetail/${id}`);
     } catch (err) {

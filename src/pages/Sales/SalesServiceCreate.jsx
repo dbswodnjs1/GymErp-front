@@ -1,10 +1,11 @@
-// src/pages/Sales/SalesServiceCreate.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaSearch } from "react-icons/fa";
+import MemberSearchModal from "../../components/MemberSearchModal"; // ✅ 검색용 모달 import
+
 
 // ✅ 프록시 강제 사용 (절대경로 방지)
-axios.defaults.baseURL = "";
+// axios.defaults.baseURL = "";
 
 function SalesServiceCreate() {
   const [form, setForm] = useState({
@@ -18,16 +19,32 @@ function SalesServiceCreate() {
     discount: 0,
     memNum: "",
     memberName: "",
-    empNum: 1,
+    empNum: "",
   });
 
-  // 숫자 포맷
+  const [showMemberModal, setShowMemberModal] = useState(false);
+
+  // ✅ 로그인한 직원 empNum 자동 세팅
+  useEffect(() => {
+    try {
+      const storedUser = sessionStorage.getItem("user");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        if (user.empNum) {
+          setForm((prev) => ({ ...prev, empNum: user.empNum }));
+          console.log("✅ 로그인한 직원:", user.empName, `(ID: ${user.empNum})`);
+        }
+      }
+    } catch (err) {
+      console.error("로그인 정보 로드 실패:", err);
+    }
+  }, []);
+
   const formatNumber = (value) =>
     value === null || value === ""
       ? ""
       : value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-  // 숫자 파싱
   const parseNumber = (value) => Number(value.replace(/[^0-9]/g, "")) || 0;
 
   /* ===============================
@@ -56,22 +73,19 @@ function SalesServiceCreate() {
   };
 
   /* ===============================
-     [2] 회원 선택
+     [2] 회원 검색 모달 연동
   =============================== */
-  const handleSelectMember = async () => {
-    const selectedMemNum = 126; // 예시용 ID
-    try {
-      const res = await axios.get(`/v1/member/${selectedMemNum}`);
-      const member = res.data;
-      setForm((prev) => ({
-        ...prev,
-        memNum: member.memNum,
-        memberName: member.memName,
-      }));
-    } catch (err) {
-      console.error(err);
-      //alert("회원 정보를 불러오는 중 오류가 발생했습니다.");
-    }
+  const handleSelectMember = () => setShowMemberModal(true);
+
+  // ✅ MemberSearchModal → 부모로 전달
+  const handleMemberSelect = (member) => {
+    setForm((prev) => ({
+      ...prev,
+      memNum: member.memNum,
+      memberName: member.memName,
+    }));
+    setShowMemberModal(false);
+    console.log("✅ 선택된 회원:", member.memName, `(ID: ${member.memNum})`);
   };
 
   /* ===============================
@@ -103,11 +117,10 @@ function SalesServiceCreate() {
     e.preventDefault();
     try {
       const { memberName, ...requestData } = form;
-      const res = await axios.post("/v1/sales/services", requestData);
+      const res = await axios.post("/api/v1/sales/services", requestData);
 
       if (res.data.result > 0) {
         alert(res.data.message);
-        // ✅ 등록 성공 후 입력값 초기화
         setForm({
           serviceId: "",
           serviceName: "",
@@ -119,7 +132,7 @@ function SalesServiceCreate() {
           discount: 0,
           memNum: "",
           memberName: "",
-          empNum: 1,
+          empNum: form.empNum, // 로그인 정보는 유지
         });
       } else {
         alert("등록 실패. 다시 시도해주세요.");
@@ -130,14 +143,18 @@ function SalesServiceCreate() {
     }
   };
 
-  /* ===============================
-     [5] 렌더링
-  =============================== */
-  const isSubmitDisabled = !form.memNum || !form.serviceId; // ✅ 회원 or 상품 미선택 시 등록 비활성화
+  const isSubmitDisabled = !form.memNum || !form.serviceId;
 
   return (
     <div className="container mt-5" style={{ maxWidth: "700px" }}>
       <h4 className="fw-bold mb-5 text-start">서비스 판매 등록</h4>
+
+      {/* ✅ 회원 검색 모달 */}
+      <MemberSearchModal
+        show={showMemberModal}
+        onHide={() => setShowMemberModal(false)}
+        onSelect={handleMemberSelect}
+      />
 
       <form
         onSubmit={handleSubmit}
@@ -165,15 +182,11 @@ function SalesServiceCreate() {
                     placeholder="서비스 선택"
                     value={form.serviceName}
                     readOnly
-                    style={{ width: "100%" }}
                   />
                   <button
                     type="button"
                     className="btn btn-outline-secondary position-absolute"
-                    style={{
-                      right: "calc(50% - 170px - 45px)",
-                      height: "38px",
-                    }}
+                    style={{ right: "calc(50% - 170px - 45px)", height: "38px" }}
                     onClick={handleSelectService}
                   >
                     <FaSearch />
@@ -216,15 +229,11 @@ function SalesServiceCreate() {
                     placeholder="회원 선택"
                     value={form.memberName}
                     readOnly
-                    style={{ width: "100%" }}
                   />
                   <button
                     type="button"
                     className="btn btn-outline-secondary position-absolute"
-                    style={{
-                      right: "calc(50% - 170px - 45px)",
-                      height: "38px",
-                    }}
+                    style={{ right: "calc(50% - 170px - 45px)", height: "38px" }}
                     onClick={handleSelectMember}
                   >
                     <FaSearch />

@@ -3,14 +3,14 @@
 // - 삭제 확인 + DELETE /v1/member/{id}
 // =============================================
 import { useState } from "react";
-import axios from "axios";
+import api from "../../api/axiosConfig";
 
 export default function MemberDelete({ memNum, onCancel, onDeleted }) {
   const [busy, setBusy] = useState(false);
   const remove = async () => {
     if (busy) return; setBusy(true);
     try {
-      await axios.delete(`http://localhost:9000/v1/member/${memNum}`);
+      await api.delete(`/v1/member/${memNum}`);
       alert('회원이 삭제되었습니다.');
       onDeleted?.();
     } catch (e) {

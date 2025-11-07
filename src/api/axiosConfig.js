@@ -2,7 +2,7 @@
 
 import axios from "axios";
 
-axios.defaults.baseURL = "http://localhost:9000"; // 스프링 주손
+axios.defaults.baseURL = "/api"; // 스프링 주손
 axios.defaults.withCredentials = true; // 모든 요청에 쿠키 포함
 
 // 요청 인터셉터

@@ -10,7 +10,7 @@ function AiSalesPredictionChart() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get("/v1/analytics/ai/sales");
+        const res = await axios.get("/api/v1/analytics/ai/sales");
         console.log("✅ AI 매출 예측 응답:", res.data);
         setData(res.data || []);
       } catch (err) {
@@ -90,7 +90,7 @@ function AiSalesPredictionChart() {
       {
         name: `${nextYear}년 (예측)`,
         data: nextYearPredicted,
-        color: "#FB8C00",
+        color: "#fb4f00ff",
         dashStyle: "ShortDash",
       },
     ],

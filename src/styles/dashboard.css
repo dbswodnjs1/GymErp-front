@@ -1,0 +1,81 @@
+/* === THEME VARIABLES === */
+/* 기본: 라이트 */
+:root{
+  --bg-grad: radial-gradient(1200px 800px at 20% 0%, #f8fafc 0%, #eef2f7 40%, #e5e9f1 100%);
+  --glass-bg: rgba(255,255,255,.65);
+  --glass-sidebar-bg: rgba(255,255,255,.55);
+  --card: rgba(255,255,255,0.7);
+  --border: rgba(2,6,23,0.08);
+  --text: #0f172a; 
+  --muted:#64748b;
+  --brand:#0ea5e9; --brand2:#22c55e; --warn:#d97706; --danger:#dc2626;
+}
+
+/* 다크 모드: html[data-theme="dark"]에만 적용 */
+html[data-theme="dark"]{
+  --bg-grad: radial-gradient(1200px 800px at 20% 0%, #1f2937 0%, #0b1020 40%, #0a0f1f 100%);
+  --glass-bg: rgba(10,15,31,.45);
+  --glass-sidebar-bg: rgba(10,15,31,.35);
+  --card: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.12);
+  --text: #e5e7eb;
+  --muted:#94a3b8;
+  --brand:#34d399; --brand2:#60a5fa; --warn:#f59e0b; --danger:#ef4444;
+}
+
+/* 이하 기존 클래스는 변수만 쓰도록 유지 */
+.app-bg{ background:var(--bg-grad); min-height:100vh; color:var(--text); }
+.glass{
+  background:var(--card); border:1px solid var(--border);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,.12);
+}
+.soft-shadow{ transition: transform .2s ease, box-shadow .2s ease; }
+.soft-shadow:hover{ transform: translateY(-2px); box-shadow: 0 14px 40px rgba(0,0,0,.18); }
+
+.kpi{ padding:16px 18px; display:flex; align-items:center; gap:14px; }
+.kpi .icon{
+  width:44px; height:44px; border-radius:12px; display:grid; place-items:center;
+  background: linear-gradient(135deg, var(--brand), var(--brand2));
+  color:#0b1020; font-size:20px; font-weight:700;
+}
+.kpi .label{ color:var(--muted); font-size:.9rem; }
+.kpi .value{
+  font-weight:800; font-size:1.4rem; letter-spacing:.2px;
+  background: linear-gradient(90deg, #0f172a, #334155);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+html[data-theme="dark"] .kpi .value{
+  background: linear-gradient(90deg, #fff, #d1d5db);
+}
+
+.trend{ font-size:.85rem; }
+.trend.up{ color:var(--brand); }
+.trend.down{ color:var(--danger); }
+
+.navbar-glass{
+  background:var(--glass-bg); border-bottom:1px solid var(--border);
+  backdrop-filter: blur(10px);
+}
+.sidebar-glass{
+  background:var(--glass-sidebar-bg); border-right:1px solid var(--border);
+  backdrop-filter: blur(10px);
+}
+.sidebar-glass .nav-link{ color:var(--muted); border-radius:10px; }
+.sidebar-glass .nav-link.active, .sidebar-glass .nav-link:hover{
+  color:var(--text); background:rgba(0,0,0,.05);
+}
+html[data-theme="dark"] .sidebar-glass .nav-link.active,
+html[data-theme="dark"] .sidebar-glass .nav-link:hover{
+  background:rgba(255,255,255,.08);
+}
+
+.card-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 14px; border-bottom:1px solid var(--border);
+}
+.card-title{ color:var(--text); font-weight:700; letter-spacing:.2px; }
+.card-actions .btn{
+  --bs-btn-bg: transparent; --bs-btn-border-color: var(--border); --bs-btn-color:var(--muted);
+  border:1px solid var(--border);
+}

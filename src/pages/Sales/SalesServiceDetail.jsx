@@ -40,7 +40,7 @@ function SalesServiceDetail() {
       setError("");
 
       try {
-        const res = await axios.get(`/v1/sales/services/${id}`);
+        const res = await axios.get(`/api/v1/sales/services/${id}`);
 
         const data =
           res?.data?.serviceName !== undefined
@@ -60,7 +60,7 @@ function SalesServiceDetail() {
         let memName = "";
         if (data.memNum) {
           try {
-            const memberRes = await axios.get(`/v1/member/${data.memNum}`);
+            const memberRes = await axios.get(`/api/v1/member/${data.memNum}`);
             memName = memberRes.data.memName || "";
           } catch {
             memName = "(탈퇴 회원)";
@@ -71,7 +71,7 @@ function SalesServiceDetail() {
         let empName = "";
         if (data.empNum) {
           try {
-            const empRes = await axios.get(`/v1/emp/${data.empNum}`);
+            const empRes = await axios.get(`/api/v1/emp/${data.empNum}`);
             empName = empRes.data.empName || "";
           } catch {
             empName = "(퇴사자)";
