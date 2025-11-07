@@ -1,17 +1,21 @@
 // src/pages/SchedulePage.jsx
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import axios from "axios";
-import { format } from "date-fns";
-
+import { format, isSameDay } from "date-fns";               // ✅ MOD: isSameDay
 import { ko } from "date-fns/locale";
 import { Modal, Button, Form, Row, Col } from "react-bootstrap";
 import { useLocation, useNavigate } from "react-router-dom";
 import ScheduleCalendar from "../components/ScheduleCalendar";
 import ScheduleModal from "../components/ScheduleModal";
+import ScheduleOpenModal from "../components/ScheduleOpenModal"; // ✅ MOD
+import "bootstrap-icons/font/bootstrap-icons.css";               // ✅ MOD
+import "../components/css/SchedulePage.css";
 
 /* ========= 공통 유틸 ========= */
+
 const safeJson = (s) => {
   try { return JSON.parse(s); } catch { return null; }
+
 };
 
 // 공통 매핑 함수 (일정 → 캘린더 이벤트)
@@ -37,15 +41,13 @@ const codeColor = (codeBid) =>
     : "#95a5a6";
 
 
-
 function mapToEvents(list = []) {
   return list.map((e) => {
     const label = typeMap[e.codeBid] || e.codeBName || "일정";
     return {
-      title:
-        label === "PT"
-          ? `[${label}] ${e.memName || "회원"} - ${e.memo || ""}`
-          : `[${label}] ${e.empName || ""} - ${e.memo || ""}`,
+      title: label === "PT"
+        ? `[${label}] ${e.memName || "회원"} - ${e.memo || ""}`
+        : `[${label}] ${e.empName || ""} - ${e.memo || ""}`,
       start: new Date(e.startTime),
       end: new Date(e.endTime),
       color: codeColor(e.codeBid),
@@ -80,7 +82,6 @@ function readRoleFromStorage() {
       if (found) return found;
     }
   }
-
   const direct = (localStorage.getItem("role") || sessionStorage.getItem("role") || "").toUpperCase();
   return direct || "";
 }
@@ -93,10 +94,16 @@ export default function SchedulePage() {
 
   const [showModal, setShowModal] = useState(false);         // 등록/수정 모달 표시
   const [modalKey, setModalKey] = useState(0);               // 강제 리마운트 키
+
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [editData, setEditData] = useState(null);
   const [clickedDate, setClickedDate] = useState(null);
+
+  // ✅ MOD: 일정 목록 모달 상태 + 대기 편집 데이터
+  const [showListModal, setShowListModal] = useState(false);
+  const [listDate, setListDate] = useState(null);
+  const [pendingEdit, setPendingEdit] = useState(null);       // ✅ MOD: 닫힘 후 열기용 버퍼
 
   // 직원 상세 → 일정으로 넘어올 때 URL 파라미터로 empNum/empName 받기
   const location = useLocation();
@@ -120,10 +127,8 @@ export default function SchedulePage() {
       const url = empNum
         ? `http://localhost:9000/v1/schedule/emp/${empNum}`
         : "http://localhost:9000/v1/schedule/all";
-
       const { data } = await axios.get(url);
-      const loaded = mapToEvents(data || []);
-      setEvents(loaded);
+      setEvents(mapToEvents(data || []));
     } catch (err) {
       console.error("[일정 불러오기 실패]:", err);
     }
@@ -134,7 +139,6 @@ export default function SchedulePage() {
     loadSchedules();
   }, [loadSchedules]);
 
-
   /* ============================================ */
   /** 관리자 검색 (직원이름, 유형, 키워드만) */
   const searchAdmin = async ({ empName, codeBid, keyword }) => {
@@ -143,8 +147,8 @@ export default function SchedulePage() {
     const params = { page: 1, size: 20 };
 
     const kw = (empName || keyword || "").trim();
-    if (kw) q.keyword = kw;
-    if (codeBid) q.codeBid = codeBid;
+    if (kw) params.keyword = kw;
+    if (codeBid) params.codeBid = codeBid;
 
     const { data } = await axios.get(`http://localhost:9000/v1/schedules/search`, { params });
 
@@ -161,7 +165,6 @@ export default function SchedulePage() {
       navigate({ search: `?${next.toString()}` }, { replace: true });
     } else {
       alert("검색 결과가 없습니다.");
-
     }
   };
 
@@ -169,6 +172,7 @@ export default function SchedulePage() {
   /** 캘린더 빈 칸 클릭 → 등록 */
   const handleSelectSlot = (slotInfo) => {
     const dateStr = format(slotInfo.start, "yyyy-MM-dd");
+
     setClickedDate(dateStr);
     setEditData(null);
     setModalKey(Date.now());          // 항상 새 키로 리마운트
@@ -181,7 +185,26 @@ export default function SchedulePage() {
     setShowDetailModal(true);
   };
 
-  /** 상세 보기 → 삭제 */
+  /* ============================================ */
+  // ✅ MOD: +N 클릭 시 해당 날짜의 목록 모달 열기
+  const openListForDate = (dateObj) => {
+    setListDate(dateObj);
+    setShowListModal(true);
+  };
+
+  // ✅ MOD: 해당 날짜의 이벤트 목록
+  const eventsOfThatDay = useMemo(() => {
+    if (!listDate) return [];
+    return events.filter((ev) => isSameDay(new Date(ev.start), listDate));
+  }, [events, listDate]);
+
+  // ✅ MOD: 목록 모달에서 "편집" → 닫힘 완료 후 등록 모달 열기
+  const handleOpenEdit = (evEditData) => {
+    setPendingEdit(evEditData);          // 닫힌 뒤 열기 위해 보관
+    setShowListModal(false);             // 목록 모달 닫기 (onExited에서 열림)
+  };
+
+  // 상세 보기 → 삭제
   const handleDelete = async () => {
     if (!selectedEvent?.shNum) {
       alert("삭제할 일정의 shNum이 없습니다.");
@@ -192,7 +215,6 @@ export default function SchedulePage() {
       const url = `http://localhost:9000/v1/schedule/delete/${selectedEvent.shNum}`;
       await axios.delete(url);
       alert("일정이 삭제되었습니다.");
-
       setShowDetailModal(false);
       setSelectedEvent(null);
       await loadSchedules();
@@ -202,10 +224,11 @@ export default function SchedulePage() {
     }
   };
 
-  /** 상세 → 수정 전환 */
+  // 상세 → 수정 전환
   const handleEdit = () => {
     setShowDetailModal(false);
     setEditData(selectedEvent);
+    setClickedDate(format(selectedEvent.start, "yyyy-MM-dd"));
     setModalKey(Date.now());          // 수정 모달도 새 키로
     setShowModal(true);
   };
@@ -227,28 +250,18 @@ export default function SchedulePage() {
 
   return (
     <div>
+      {/* ✅ MOD: 헤더(아이콘+현재 날짜) */}
       <div className="d-flex align-items-center gap-2 mb-3">
-        <span className="cal-badge">
-          <i className="bi bi-calendar2-week" />
-        </span>
-
+        <span className="cal-badge"><i className="bi bi-calendar2-week" /></span>
         <div className="d-flex flex-column">
-          <h4 className="m-0 fw-semibold" style={{ color: "#2b2b2b", fontSize: "1.6rem" }}>
-            일정관리
-          </h4>
+          <h4 className="m-0 fw-semibold" style={{ color: "#2b2b2b", fontSize: "1.6rem" }}>일정관리</h4>
           <div className="cal-subtitle">
             {format(focusDate || new Date(), "yyyy.MM.dd (EEE)", { locale: ko })}
           </div>
         </div>
-
-        {/* <div className="ms-auto d-flex gap-2">
-    <Button variant="outline-secondary" size="sm" onClick={() => setFocusDate?.(new Date())}>
-      오늘
-    </Button>
-    <Button variant="primary" size="sm" onClick={() => { setEditData(null); setShowModal(true); }}>
-      새 일정
-    </Button>
-  </div> */}
+        <div className="ms-auto d-flex gap-2">
+          <Button variant="outline-secondary" size="sm" onClick={() => setFocusDate?.(new Date())}>오늘</Button>
+        </div>
       </div>
       <hr className="mt-2" />
 
@@ -262,7 +275,23 @@ export default function SchedulePage() {
         onSelectEvent={handleSelectEvent}
         isAdmin={isAdmin}
         focusDate={focusDate}
+        onShowMore={(eventsInDay, date) => openListForDate(date)}  // ✅ MOD
+      />
 
+      {/* ✅ MOD: 일정 목록 모달(+N 클릭 시) */}
+      <ScheduleOpenModal
+        show={showListModal}
+        date={listDate}
+        events={eventsOfThatDay}
+        onClose={() => setShowListModal(false)}
+        onEdit={handleOpenEdit}
+        onExited={() => {                          // ✅ MOD: 닫힘 완료 후 열기
+          if (!pendingEdit) return;
+          setEditData(pendingEdit);
+          setClickedDate(pendingEdit.startTime?.slice(0, 10) || null);
+          setShowModal(true);
+          setPendingEdit(null);
+        }}
       />
 
       {/* 등록/수정 모달 — 조건부 렌더링 + 강제 리마운트 키 */}
@@ -279,7 +308,7 @@ export default function SchedulePage() {
         />
       )}
 
-      {/* 상세 보기 모달 */}
+      {/* 상세 보기: 이벤트 클릭 → 읽기 전용 모달(풀기능 유지) */}
       {showDetailModal && selectedEvent && (
         <ScheduleModal
           show={showDetailModal}

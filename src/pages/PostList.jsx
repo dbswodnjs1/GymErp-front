@@ -21,12 +21,13 @@ function norm(row) {
 export default function PostList() {
   const nav = useNavigate();
   const [rows, setRows] = useState([]);
-  const [keyword, setKeyword] = useState("");
+  const [keyword, setKeyword] = useState("");     // 입력창 값
+  const [searchTerm, setSearchTerm] = useState(""); // 실제 검색에 적용되는 값
+  const [filterType, setFilterType] = useState("all");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const pageSize = 10;
 
-  // 개발모드 StrictMode 중복 호출 가드
   const loaded = useRef(false);
 
   useEffect(() => {
@@ -47,26 +48,41 @@ export default function PostList() {
       .finally(() => setLoading(false));
   }, []);
 
-  // 검색 필터
+  // ✅ 검색 필터 (searchTerm이 바뀔 때만 실행)
   const filtered = useMemo(() => {
-    const q = keyword.trim().toLowerCase();
+    const q = searchTerm.trim().toLowerCase();
     if (!q) return rows;
-    return rows.filter(
-      (v) =>
+    return rows.filter((v) => {
+      if (filterType === "title") return v.title.toLowerCase().includes(q);
+      if (filterType === "writer") return v.writer.toLowerCase().includes(q);
+      return (
         v.title.toLowerCase().includes(q) ||
         v.writer.toLowerCase().includes(q)
-    );
-  }, [rows, keyword]);
+      );
+    });
+  }, [rows, searchTerm, filterType]);
 
-  // 페이지 계산
+  // ✅ 페이지 계산
   const totalPage = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageList = useMemo(() => {
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
   }, [filtered, page, pageSize]);
 
-  // 날짜 포맷(yyyy-mm-dd)
   const d8 = (s) => (typeof s === "string" ? s.slice(0, 10) : "-");
+
+  // ✅ 검색 / 초기화 버튼 동작
+  const handleSearch = () => {
+    setSearchTerm(keyword); // 실제 검색어 반영
+    setPage(1);
+  };
+
+  const handleReset = () => {
+    setKeyword("");
+    setSearchTerm("");
+    setFilterType("all");
+    setPage(1);
+  };
 
   return (
     <div className="container py-4">
@@ -74,30 +90,44 @@ export default function PostList() {
       <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
         <h2 className="m-0">게시판</h2>
 
-        <div className="d-flex align-items-center gap-2">
-          {/* 검색바 */}
-          <div className="input-group" style={{ minWidth: 280 }}>
-            <input
-              className="form-control"
-              placeholder="검색(제목/작성자)"
-              value={keyword}
-              onChange={(e) => {
-                setKeyword(e.target.value);
-                setPage(1);
-              }}
-              onKeyDown={(e) => e.key === "Enter" && setPage(1)}
-            />
-            <button
-              className="btn btn-outline-secondary"
-              onClick={() => setPage(1)}
-            >
-              <i className="bi bi-search" />
-            </button>
-          </div>
+        <div className="d-flex align-items-center gap-2 flex-wrap" style={{ minWidth: 480 }}>
+          {/* 🔽 검색 필터 셀렉트 */}
+          <select
+            className="form-select"
+            style={{ width: 120 }}
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+          >
+            <option value="all">전체</option>
+            <option value="title">제목</option>
+            <option value="writer">작성자</option>
+          </select>
 
+          {/* 🔍 검색 입력 */}
+          <input
+            className="form-control"
+            style={{ flex: 1, minWidth: 200 }}
+            placeholder="검색어 입력..."
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            // ❌ Enter로 바로 검색 안 되게 제거하려면 이 줄 삭제
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          />
+
+          {/* 🔘 검색 버튼 */}
+          <button className="btn btn-primary" onClick={handleSearch}>
+            검색
+          </button>
+
+          {/* ♻️ 초기화 버튼 */}
+          <button className="btn btn-outline-secondary" onClick={handleReset}>
+            초기화
+          </button>
+
+          {/* ➕ 등록 버튼 */}
           <button
-            className="btn btn-success w-100"
-            style={{ maxWidth: "100px", height: "38px" }}
+            className="btn btn-success"
+            style={{ width: "100px", height: "38px" }}
             onClick={() => nav("/post/new")}
           >
             등록
@@ -134,8 +164,6 @@ export default function PostList() {
               pageList.map((v) => (
                 <tr key={v.id}>
                   <td>{v.id}</td>
-
-                  {/* 제목: 말줄임, 고정글 배지 */}
                   <td className="text-start">
                     {v.pinned === "Y" && (
                       <span className="me-2" title="상단 고정">📌</span>
@@ -149,8 +177,6 @@ export default function PostList() {
                       {v.title || "(제목 없음)"}
                     </span>
                   </td>
-
-                  {/* 작성자는 작은 화면에서 숨김 */}
                   <td className="d-none d-md-table-cell">{v.writer}</td>
                   <td>{v.viewCnt}</td>
                   <td>{d8(v.createdAt)}</td>

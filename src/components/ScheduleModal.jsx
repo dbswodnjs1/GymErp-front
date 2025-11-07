@@ -1,62 +1,70 @@
+// src/components/ScheduleModal.jsx
 import { useState, useEffect } from "react";
 import { Modal, Tabs, Tab, Button, Row, Col, Form } from "react-bootstrap";
 import axios from "axios";
 import "./css/ScheduleModal.css";
 
-/* ================= 공통 에러 파서 - 강화판 ================= */
+/* ================= 공통 에러 파서 - 코드/스택 미노출 ================= */
 function parseErrorMessages(err) {
   const res = err?.response;
   const status = res?.status;
   const data = res?.data;
 
-  // 서버에서 온 모든 단서 모으기
-  const parts = [];
-  if (typeof data === "string") parts.push(data);
-  if (typeof data === "object" && data) {
-    ["message", "error", "code", "errorCode", "detail", "details", "cause", "trace", "path"].forEach((k) => {
-      if (data[k]) parts.push(String(data[k]));
-    });
+  // 서버 문구 1순위(스택/클래스명 제거)
+  const clean = (t) => {
+    if (!t) return "";
+    let s = String(t).replace(/\s+/g, " ").trim();
+    // 스택/프레임 힌트 잘라내기
+    s = s.split("\n")[0];
+    s = s.split(" at ")[0];
+    s = s.replace(/^"(.+)"$/, "$1"); // 양끝 쿼트 제거
+    return s;
+  };
+
+  let serverMsg = "";
+  if (typeof data === "string") serverMsg = clean(data);
+  else if (typeof data === "object" && data) {
+    serverMsg = clean(data.message || data.error || data.detail || data.details || data.cause || "");
   }
-  // 에러 객체 문자열/스택까지
-  if (err?.message) parts.push(String(err.message));
-  if (err?.stack) parts.push(String(err.stack));
-  const raw = parts.join(" ").replace(/\s+/g, " ").trim();
+  // 문자열 전체에서 따옴표 안의 짧은 한글 문장 추출 시도(예: "해당 트레이너의 …")
+  if (!serverMsg) {
+    const raw = clean((typeof data === "string" ? data : JSON.stringify(data)) || err?.message || "");
+    const m = raw.match(/"([^"]{5,200})"/);
+    if (m) serverMsg = clean(m[1]);
+  }
 
   const msgs = [];
-  const has = (re) => re.test(raw);
+  const hasText = (re) => re.test([serverMsg, (typeof data === "string" ? data : JSON.stringify(data) || ""), err?.message || ""].join(" "));
 
-  // 도메인: 회원권/이용권
-  if (has(/회원권|이용권|멤버십|membership|pass|ticket|잔여|남은|만료/i)) {
+  // 409 & 중복류 → 서버 문구 그대로 우선 표시
+  if (status === 409 && serverMsg) {
+    msgs.push(serverMsg);
+  } else if (hasText(/같은\s*시간대|이미\s*일정|conflict/i)) {
+    msgs.push(serverMsg || "해당 시간대에 이미 다른 일정이 있습니다. 시간을 변경해 주세요.");
+  }
+
+  // 회원권/시간/리소스/제약 공통 휴리스틱
+  if (hasText(/회원권|이용권|멤버십|membership|pass|ticket|잔여|만료/i)) {
     msgs.push("이 회원은 유효한 회원권이 없습니다. 회원권 등록 후 다시 시도하세요.");
   }
-
-  // 시간/중복
-  if (has(/중복|overlap|already|duplicate/i)) {
-    msgs.push("해당 시간대에 이미 다른 일정이 존재합니다. 시간을 변경해 주세요.");
-  }
-  if (has(/시간.*유효|invalid time|start.*after|end.*before/i)) {
+  if (hasText(/start.*after|end.*before|시간.*유효/i)) {
     msgs.push("시작/종료 시간이 올바르지 않습니다.");
   }
+  if (hasText(/member.*not.*found|회원.*없음/i)) msgs.push("선택한 회원을 찾을 수 없습니다.");
+  if (hasText(/emp.*not.*found|직원.*없음|trainer/i)) msgs.push("트레이너 정보를 찾을 수 없습니다.");
+  if (hasText(/ORA-\d{5}/)) msgs.push("데이터 제약조건을 위반했습니다. 입력 값을 확인하세요.");
 
-  // 리소스 없음
-  if (has(/member.*not.*found|회원.*없음/i)) msgs.push("선택한 회원을 찾을 수 없습니다.");
-  if (has(/emp.*not.*found|직원.*없음|trainer/i)) msgs.push("트레이너 정보를 찾을 수 없습니다.");
-
-  // DB 제약/오라클
-  const ora = raw.match(/ORA-\d{5}/);
-  if (ora) {
-    msgs.push("데이터 제약조건을 위반했습니다. 입력 값을 확인하세요.");
-  }
-
-  // HTTP 상태 기본 처리
+  // HTTP 상태 기본
   if (status === 400 && msgs.length === 0) msgs.push("요청 값이 올바르지 않습니다.");
   if (status === 403) msgs.push("권한이 없습니다.");
   if (status === 404) msgs.push("대상을 찾을 수 없습니다.");
   if (status >= 500 && msgs.length === 0) msgs.push("서버 오류가 발생했습니다. 잠시 후 다시 시도하세요.");
 
-  if (msgs.length === 0) msgs.push("등록에 실패했습니다.");
+  // 서버 문구가 있고 아직 안 넣었으면 마지막으로 추가
+  if (serverMsg && !msgs.some((m) => m === serverMsg)) msgs.push(serverMsg);
 
-  return { msgs: [...new Set(msgs)].filter(Boolean), raw };
+  if (msgs.length === 0) msgs.push("등록에 실패했습니다.");
+  return { msgs: [...new Set(msgs)].filter(Boolean) };
 }
 
 /* ============================================================= */
@@ -77,8 +85,6 @@ export default function ScheduleModal({
   const [tab, setTab] = useState(defaultTab);
   const isView = mode === "view";
 
-
-  // 수정/조회 시 → 탭 자동 이동
   useEffect(() => {
     if (!editData) {
       setTab(defaultTab);
@@ -94,58 +100,21 @@ export default function ScheduleModal({
   };
 
   return (
-    <Modal
-      show={show}
-      centered
-      size="lg"
-      backdrop="static"
-      onHide={onClose}     // X/ESC 닫기
-    >
+    <Modal show={show} centered size="lg" backdrop="static" onHide={onClose}>
       <Modal.Header closeButton>
         <Modal.Title>일정 {isView ? "상세" : "관리"}</Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
-        <Tabs
-          id="schedule-tabs"
-          activeKey={tab}
-          onSelect={(k) => setTab(k || "pt")}
-          className="mb-3"
-          justify
-          mountOnEnter          // 탭 최초 진입 시에만 마운트
-          unmountOnExit         // 탭 벗어나면 언마운트(상태 초기화)
-        >
+        <Tabs id="schedule-tabs" activeKey={tab} onSelect={(k) => setTab(k || "pt")} className="mb-3" justify mountOnEnter unmountOnExit>
           <Tab eventKey="pt" title="PT">
-            <PTTab
-              empNum={empNum}
-              empName={empName}
-              onSaved={handleSaved}
-              editData={editData}
-              selectedDate={selectedDate}
-              readOnly={isView}
-            />
+            <PTTab empNum={empNum} empName={empName} onSaved={handleSaved} editData={editData} selectedDate={selectedDate} readOnly={isView} />
           </Tab>
-
           <Tab eventKey="vacation" title="휴가">
-            <VacationTab
-              empNum={empNum}
-              empName={empName}
-              onSaved={handleSaved}
-              editData={editData}
-              selectedDate={selectedDate}
-              readOnly={isView}
-            />
+            <VacationTab empNum={empNum} empName={empName} onSaved={handleSaved} editData={editData} selectedDate={selectedDate} readOnly={isView} />
           </Tab>
-
           <Tab eventKey="etc" title="기타">
-            <EtcTab
-              empNum={empNum}
-              empName={empName}
-              onSaved={handleSaved}
-              editData={editData}
-              selectedDate={selectedDate}
-              readOnly={isView}
-            />
+            <EtcTab empNum={empNum} empName={empName} onSaved={handleSaved} editData={editData} selectedDate={selectedDate} readOnly={isView} />
           </Tab>
         </Tabs>
       </Modal.Body>
@@ -153,20 +122,12 @@ export default function ScheduleModal({
       <Modal.Footer>
         {isView ? (
           <>
-            {onEdit && (
-              <Button variant="primary" onClick={() => onEdit(editData)}>수정</Button>
-            )}
-            {onDelete && (
-              <Button variant="danger" onClick={() => onDelete(editData)}>삭제</Button>
-            )}
-            <Button type="button" variant="secondary" onClick={onClose}>
-              닫기
-            </Button>
+            {onEdit && <Button variant="primary" onClick={() => onEdit(editData)}>수정</Button>}
+            {onDelete && <Button variant="danger" onClick={() => onDelete(editData)}>삭제</Button>}
+            <Button type="button" variant="secondary" onClick={onClose}>닫기</Button>
           </>
         ) : (
-          <Button type="button" variant="secondary" onClick={onClose}>
-            닫기
-          </Button>
+          <Button type="button" variant="secondary" onClick={onClose}>닫기</Button>
         )}
       </Modal.Footer>
     </Modal>
@@ -179,17 +140,15 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate, readOnly=fals
   const disabled = readOnly;
   const toStrId = (v) => (v === null || v === undefined ? "" : String(v));
 
-  // HH:mm 문자열에 분 더하기
   const addMinutesToTime = (timeStr, minutes) => {
     if (!timeStr) return "";
     const [h, m] = timeStr.split(":").map(Number);
-    const total = (h * 60 + m + minutes + 1440) % 1440; // 24h 래핑
+    const total = (h * 60 + m + minutes + 1440) % 1440;
     const hh = String(Math.floor(total / 60)).padStart(2, "0");
     const mm = String(total % 60).padStart(2, "0");
     return `${hh}:${mm}`;
   };
 
-  // 사용자가 종료시간을 직접 수정했는지
   const [endDirty, setEndDirty] = useState(false);
 
   const [form, setForm] = useState({
@@ -202,9 +161,7 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate, readOnly=fals
     memo: "",
   });
   const [members, setMembers] = useState([]);
-  const [errors, setErrors] = useState([]);       // 사용자용 메시지
-  const [errorRaw, setErrorRaw] = useState("");   // 원문
-  const [showRaw, setShowRaw] = useState(false);  // 원문 토글
+  const [errors, setErrors] = useState([]);
 
   const fmtPhone = (v) => {
     if (!v) return "";
@@ -214,18 +171,11 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate, readOnly=fals
     return v;
   };
 
-  const sortByKoName = (arr) =>
-    [...(Array.isArray(arr) ? arr : [])].sort((a, b) =>
-      (a.memName || "").localeCompare(b.memName || "", "ko")
-    );
+  const sortByKoName = (arr) => [...(Array.isArray(arr) ? arr : [])].sort((a, b) => (a.memName || "").localeCompare(b.memName || "", "ko"));
 
   useEffect(() => {
     if (empNum || empName) {
-      setForm((prev) => ({
-        ...prev,
-        empNum: toStrId(empNum),
-        empName: empName || prev.empName,
-      }));
+      setForm((prev) => ({ ...prev, empNum: toStrId(empNum), empName: empName || prev.empName }));
     }
 
     if (editData) {
@@ -238,57 +188,39 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate, readOnly=fals
         endTime: editData.endTime?.slice(11, 16) || "",
         memo: editData.memo || "",
       });
-      setEndDirty(true);   // 기존 일정은 사용자가 직접 세팅한 값 존중
+      setEndDirty(true);
     } else {
       setForm((prev) => ({ ...prev, date: selectedDate || "" }));
-      setEndDirty(false);  // 새 일정: 자동 +1h 모드
-
+      setEndDirty(false);
     }
 
-    axios
-      .get("http://localhost:9000/v1/member")
-      .then((res) => setMembers(sortByKoName(res.data)))
-      .catch((err) => console.error("회원 목록 불러오기 실패:", err));
-
+    axios.get("http://localhost:9000/v1/member").then((res) => setMembers(sortByKoName(res.data))).catch((err) => console.error("회원 목록 불러오기 실패:", err));
   }, [empNum, empName, editData, selectedDate]);
 
-  // 공용 onChange: 시작시간이면 endDirty=false일 때 자동 +1h
   const onChange = (e) => {
     const { name, value } = e.target;
-
     setForm((prev) => {
       const next = { ...prev, [name]: value };
-
       if (name === "startTime") {
-        if (!value) {
-          next.endTime = ""; // 시작시간 지우면 종료시간도 비우기
-        } else if (!endDirty) {
-          next.endTime = addMinutesToTime(value, 60); // 자동 +1h
-        }
+        if (!value) next.endTime = "";
+        else if (!endDirty) next.endTime = addMinutesToTime(value, 60);
       }
       return next;
     });
   };
 
-  // 종료시간을 직접 변경하면 자동 덮어쓰기 중단
   const onEndTimeChange = (e) => {
     setEndDirty(true);
     setForm((prev) => ({ ...prev, endTime: e.target.value }));
   };
 
-  // 현재 선택값/라벨 계산(문자열 통일)
   const currentValue = toStrId(form.memNum);
-  const currentMember =
-    members.find((m) => toStrId(m.memNum) === currentValue) || null;
-  const currentLabel =
-    editData?.memName ||
-    currentMember?.memName ||
-    (currentValue ? `회원번호 ${currentValue}` : "");
+  const currentMember = members.find((m) => toStrId(m.memNum) === currentValue) || null;
+  const currentLabel = editData?.memName || currentMember?.memName || (currentValue ? `회원번호 ${currentValue}` : "");
 
   const submit = async (e) => {
     e.preventDefault();
     if (readOnly) return;
-
 
     const payload = {
       shNum: editData?.shNum,
@@ -308,35 +240,28 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate, readOnly=fals
         await axios.post("http://localhost:9000/v1/schedule/add", payload);
         alert("PT 일정이 등록되었습니다.");
       }
+      setErrors([]);         // 성공 시 에러 비우기
       onSaved?.(payload);
-      //PT 등록 실패 시 메시지 처리용 추가 catch문
     } catch (err) {
-      console.error("PT 일정 등록/수정 실패:", err);
-      const { msgs, raw } = parseErrorMessages(err);
+      const { msgs } = parseErrorMessages(err);
       setErrors(msgs);
-      setErrorRaw(raw);
     }
   };
 
   const hasMembershipError = errors.some((m) => /회원권/.test(m));
-  const hasTimeError = errors.some((m) => /시간|중복/.test(m));
+  const hasTimeError = errors.some((m) => /시간|중복|같은 시간대|이미 일정/.test(m));
 
   return (
     <Form onSubmit={submit}>
       <Row className="g-3">
         <Col md={6}>
           <Form.Label className="fw-bold">회원명</Form.Label>
-
           {readOnly ? (
             <Form.Select name="memNum" value={currentValue} disabled>
               <option value={currentValue}>{currentLabel}</option>
             </Form.Select>
           ) : (
-            <Form.Select
-              name="memNum"
-              value={currentValue}
-              onChange={onChange}
-            >
+            <Form.Select name="memNum" value={currentValue} onChange={onChange} className={hasMembershipError ? "is-invalid" : ""}>
               <option value="">선택</option>
               {members.map((m) => {
                 const rawPhone = m.memPhone ?? m.phone ?? m.tel ?? m.memTel ?? m.mobile ?? "";
@@ -362,12 +287,11 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate, readOnly=fals
         </Col>
         <Col md={4}>
           <Form.Label className="fw-bold">시작 시간</Form.Label>
-          <Form.Control type="time" name="startTime" value={form.startTime} onChange={onChange} disabled={disabled} />
+          <Form.Control type="time" name="startTime" value={form.startTime} onChange={onChange} disabled={disabled} className={hasTimeError ? "is-invalid" : ""} />
         </Col>
         <Col md={4}>
           <Form.Label className="fw-bold">종료 시간</Form.Label>
-          <Form.Control type="time" name="endTime" value={form.endTime} onChange={onEndTimeChange} disabled={disabled} />
-
+          <Form.Control type="time" name="endTime" value={form.endTime} onChange={onEndTimeChange} disabled={disabled} className={hasTimeError ? "is-invalid" : ""} />
         </Col>
 
         <Col md={12}>
@@ -376,6 +300,13 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate, readOnly=fals
         </Col>
       </Row>
 
+      {errors.length > 0 && (
+        <div className="mt-3">
+          {errors.map((m, i) => (
+            <div key={i} className="alert alert-danger py-2 mb-2">{m}</div>
+          ))}
+        </div>
+      )}
 
       {!readOnly && (
         <div className="d-flex justify-content-end mt-3">
@@ -385,11 +316,6 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate, readOnly=fals
     </Form>
   );
 }
-
-
-
-
-
 
 /* ============================================================= */
 /* 휴가 탭 */
@@ -403,9 +329,7 @@ function VacationTab({ empNum, empName, onSaved, editData, selectedDate, readOnl
     endDate: "",
     reason: "",
   });
-  const [errors, setErrors] = useState([]);
-  const [errorRaw, setErrorRaw] = useState("");
-  const [showRaw, setShowRaw] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (empNum && empName) setForm((prev) => ({ ...prev, empNum, registrant: empName }));
@@ -421,7 +345,6 @@ function VacationTab({ empNum, empName, onSaved, editData, selectedDate, readOnl
   }, [empNum, empName, editData, selectedDate]);
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-  const [saving, setSaving] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -456,23 +379,9 @@ function VacationTab({ empNum, empName, onSaved, editData, selectedDate, readOnl
       }
       onSaved?.(payload);
     } catch (err) {
-      console.error("휴가 일정 등록 실패:", err);
-      const status = err?.response?.status;
-      const data = err?.response?.data;
-      const msg = (typeof data === "string" ? data : data?.message) || err.message || "";
-      const existing = typeof data === "object" ? data?.detail?.existing?.[0] : undefined;
-
-      if (status === 409 || /휴가|겹치/i.test(msg)) {
-        if (existing?.start && existing?.end) {
-          const s = String(existing.start).slice(0, 10);
-          const e = String(existing.end).slice(0, 10);
-          alert(`선택한 기간이 기존 휴가(${s} ~ ${e})와 겹칩니다.\n휴가는 하루에 1건만 등록할 수 있습니다.`);
-        } else {
-          alert("휴가는 하루에 1건만 등록할 수 있습니다.");
-        }
-        return;
-      }
-      alert(msg || "등록/수정 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      // 휴가도 서버 문구가 오면 바로 표시
+      const { msgs } = parseErrorMessages(err);
+      alert(msgs[0]);
     } finally {
       setSaving(false);
     }
@@ -481,58 +390,30 @@ function VacationTab({ empNum, empName, onSaved, editData, selectedDate, readOnl
   return (
     <Form onSubmit={submit}>
       <Row className="g-3">
-
-        {/* 1줄: 등록자 */}
         <Col md={6}>
           <Form.Label className="fw-bold">등록자</Form.Label>
           <Form.Control name="registrant" value={form.registrant} readOnly />
         </Col>
-        <Col md={6} /> {/* 자리 맞춤 (필요 없으면 다른 필드 배치) */}
+        <Col md={6} />
 
-        {/* 2줄: 시작일 / 종료일 */}
         <Col md={6}>
           <Form.Label className="fw-bold">시작일</Form.Label>
-          <Form.Control
-            type="date"
-            name="startDate"
-            value={form.startDate}
-            onChange={onChange}
-            disabled={disabled}
-          />
+          <Form.Control type="date" name="startDate" value={form.startDate} onChange={onChange} disabled={disabled} />
         </Col>
-
         <Col md={6}>
           <Form.Label className="fw-bold">종료일</Form.Label>
-          <Form.Control
-            type="date"
-            name="endDate"
-            value={form.endDate}
-            onChange={onChange}
-            disabled={disabled}
-          />
+          <Form.Control type="date" name="endDate" value={form.endDate} onChange={onChange} disabled={disabled} />
         </Col>
 
-        {/* 3줄: 사유(=메모 자리) 풀폭 */}
         <Col md={12}>
           <Form.Label className="fw-bold">사유</Form.Label>
-          <Form.Control
-            as="textarea"
-            rows={6}                           // PT/기타 메모와 동일 높이 권장
-            name="reason"
-            value={form.reason}
-            onChange={onChange}
-            placeholder="휴가 사유를 입력하세요"
-            disabled={disabled}
-          />
+          <Form.Control as="textarea" rows={6} name="reason" value={form.reason} onChange={onChange} placeholder="휴가 사유를 입력하세요" disabled={disabled} />
         </Col>
       </Row>
 
-      {/* 저장 버튼: 조회 모드에서는 숨김 */}
       {!readOnly && (
         <div className="d-flex justify-content-end mt-3">
-          <Button type="submit" variant="primary" disabled={saving}>
-            저장
-          </Button>
+          <Button type="submit" variant="primary" disabled={saving}>저장</Button>
         </div>
       )}
     </Form>
@@ -554,8 +435,6 @@ function EtcTab({ empNum, empName, onSaved, editData, selectedDate, readOnly=fal
     memo: "",
   });
   const [errors, setErrors] = useState([]);
-  const [errorRaw, setErrorRaw] = useState("");
-  const [showRaw, setShowRaw] = useState(false);
 
   useEffect(() => {
     if (empNum && empName) setForm((prev) => ({ ...prev, empNum, registrant: empName }));
@@ -570,17 +449,10 @@ function EtcTab({ empNum, empName, onSaved, editData, selectedDate, readOnly=fal
       });
     }
 
-    axios
-      .get("http://localhost:9000/v1/schedule-types")
+    axios.get("http://localhost:9000/v1/schedule-types")
       .then((res) => {
-        const nameMap = {
-          "ETC-COMPETITION": "대회",
-          "ETC-COUNSEL": "상담",
-          "ETC-MEETING": "회의",
-        };
-        const etc = res.data
-          .filter((c) => c.codeBId.startsWith("ETC"))
-          .map((c) => ({ ...c, displayName: nameMap[c.codeBId] || c.codeBName || c.codeBId }));
+        const nameMap = { "ETC-COMPETITION": "대회", "ETC-COUNSEL": "상담", "ETC-MEETING": "회의" };
+        const etc = res.data.filter((c) => c.codeBId.startsWith("ETC")).map((c) => ({ ...c, displayName: nameMap[c.codeBId] || c.codeBName || c.codeBId }));
         setScheduleCodes(etc);
       })
       .catch((err) => console.error("일정유형 코드 불러오기 실패:", err));
@@ -609,10 +481,11 @@ function EtcTab({ empNum, empName, onSaved, editData, selectedDate, readOnly=fal
         await axios.post("http://localhost:9000/v1/schedule/add", payload);
         alert("기타 일정이 등록되었습니다.");
       }
+      setErrors([]);
       onSaved?.(payload);
     } catch (err) {
-      console.error("기타 일정 등록 실패:", err);
-      alert("등록/수정 중 오류가 발생했습니다.");
+      const { msgs } = parseErrorMessages(err);
+      setErrors(msgs);
     }
   };
 
@@ -646,12 +519,17 @@ function EtcTab({ empNum, empName, onSaved, editData, selectedDate, readOnly=fal
         </Col>
       </Row>
 
-      {/* 저장 버튼: 조회 모드에서는 숨김 */}
+      {errors.length > 0 && (
+        <div className="mt-3">
+          {errors.map((m, i) => (
+            <div key={i} className="alert alert-danger py-2 mb-2">{m}</div>
+          ))}
+        </div>
+      )}
+
       {!readOnly && (
         <div className="d-flex justify-content-end mt-3">
-          <Button type="submit" variant="primary">
-            저장
-          </Button>
+          <Button type="submit" variant="primary">저장</Button>
         </div>
       )}
     </Form>

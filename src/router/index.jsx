@@ -13,24 +13,38 @@ import SchedulePage from "../pages/SchedulePage.jsx";
 
 import MembersList from "../pages/Members/MembersList.jsx";
 
+
+// ✅ 상품/재고 관련
+
 import SalesItemList from "../pages/Sales/SalesItemList.jsx";
 import SalesItemCreate from "../pages/Sales/SalesItemCreate.jsx";
 import SalesServiceCreate from "../pages/Sales/SalesServiceCreate.jsx";
+import ProductList from "../pages/Product/ProductList.jsx";
 import ProductCreate from "../pages/Product/ProductCreate.jsx";
 import ProductUpdate from "../pages/Product/ProductUpdate.jsx";
 import ProductDetail from "../pages/Product/ProductDetail.jsx";
+import ProductList from "../pages/Product/ProductList.jsx";
 import StockList from "../pages/Product/StockList.jsx";
 import StockInbound from "../pages/Product/StockInbound.jsx";
 import StockOutbound from "../pages/Product/StockOutbound.jsx";
 import ProductList from "../pages/Product/ProductList.jsx";
 
+// ✅ 판매 관련
+import SalesItemList from "../pages/Sales/SalesItemList.jsx";
+import SalesItemCreate from "../pages/Sales/SalesItemCreate.jsx";
+import SalesServiceList from "../pages/Sales/SalesServiceList.jsx";
+import SalesServiceCreate from "../pages/Sales/SalesServiceCreate.jsx";
+import SalesServiceEdit from "../pages/Sales/SalesServiceEdit.jsx";
+import SalesServiceDetail from "../pages/Sales/SalesServiceDetail.jsx";
+
+// ✅ 게시판 관련
 import PostList from "../pages/PostList.jsx";
 import PostAdd from "../pages/PostAdd.jsx";
 import PostEdit from "../pages/PostEdit.jsx";
 import PostView from "../pages/PostView.jsx";
 
-
-
+// ✅ 그래프 테스트
+import GraphTest from "../pages/GraphTest.jsx";
 
 
 
@@ -59,32 +73,49 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: "home", element: <Home /> },
+
+      // 직원 관련
       { path: "emp", element: <EmpList /> },
       { path: "emp/:empNum", element: <EmpDetail /> },
       { path: "emp/edit/:empNum", element: <EmpEdit /> },
       { path: "attendance/my", element: <EmpAttendanceMy /> },
       { path: "schedule", element: <SchedulePage /> },
+
+      // 회원
+      { path: "member", element: <MembersList /> },
+
+      // 상품
       { path: "product", element: <ProductList /> },
       { path: "product/:itemType/:itemId", element: <ProductDetail /> },
       { path: "product/create", element: <ProductCreate /> },
       { path: "product/edit/:productId", element: <ProductUpdate /> },
       { path: "service/edit/:serviceId", element: <ProductUpdate /> },
-      { path: "stock/inbound", element: <StockInbound /> },
-      { path: "member", element: <MembersList /> },
       { path: "product/edit/:itemType/:itemId", element: <ProductUpdate /> },
-      { path: "stock", element: <StockList/> },
+
+      // 재고
+      { path: "stock", element: <StockList /> },
+      { path: "stock/inbound", element: <StockInbound /> },
       { path: "stock/inbound/:productId", element: <StockInbound /> },
       { path: "stock/outbound/:productId", element: <StockOutbound /> },
+
+      // 판매 (상품)
       { path: "sales/salesitemlist", element: <SalesItemList /> },
       { path: "sales/salesitemcreate", element: <SalesItemCreate /> },
+
+      // ✅ 판매 (서비스)
+      { path: "sales/salesservicelist", element: <SalesServiceList /> },
       { path: "sales/salesservicecreate", element: <SalesServiceCreate /> },
+      { path: "sales/salesserviceedit/:id", element: <SalesServiceEdit /> },
+      { path: "sales/salesservicedetail/:id", element: <SalesServiceDetail /> },
+
+      // 게시판
       { path: "post", element: <PostList /> },
       { path: "post/new", element: <PostAdd /> },
       { path: "post/edit/:postId", element: <PostEdit /> },
       { path: "post/:postId", element: <PostView /> },
 
-
-
+      // ✅ 그래프 테스트
+      { path: "graphtest", element: <GraphTest /> },
     ],
   },
 ]);

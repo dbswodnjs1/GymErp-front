@@ -3,7 +3,7 @@
 // - 좌측: 목록/검색/필터/등록 버튼
 // - 우측: 모드별 패널 (상세/등록/수정/삭제)
 // =============================================
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import 'bootstrap/dist/css/bootstrap.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -20,10 +20,13 @@ export default function MembersList() {
 
   // 검색 & 상태 필터
   const [searchKeyword, setSearchKeyword] = useState('');
+  const deferredKw = useDeferredValue(searchKeyword);
+  const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('ALL'); // 'ALL' | 'USING' | 'NOT_USING'
 
   // 목록 로드
   const loadMembers = async () => {
+    setLoading(true);
     try {
       // 항상 전체를 받아와서(ALL) 클라이언트에서 상태/검색/정렬 처리
       const res = await axios.get('http://localhost:9000/v1/member');
@@ -31,19 +34,20 @@ export default function MembersList() {
     } catch (err) {
       console.error('회원 목록 조회 실패:', err);
     }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => { loadMembers(); }, [status]);
+  useEffect(() => { loadMembers(); }, []);
 
   const filteredMembers = useMemo(() => {
-    const kw = searchKeyword.trim().toLowerCase();
+    const kw = deferredKw.trim().toLowerCase();
     if (!kw) return members;
     return members.filter((m) =>
       (m.memName && m.memName.toLowerCase().includes(kw)) ||
       (m.memPhone && String(m.memPhone).toLowerCase().includes(kw)) ||
       (m.memEmail && m.memEmail.toLowerCase().includes(kw))
     );
-  }, [members, searchKeyword]);
+  }, [members, deferredKw]);
 
   // === 분류(회원권 상태), 카운트, 정렬 ===
   // 서버에서 계산해주는 membershipStatus('사용중' | '미사용중')만 신뢰
@@ -174,34 +178,38 @@ export default function MembersList() {
 
         {/* 리스트 */}
         <div className="flex-grow-1">
-          {sortedMembers.map((m) => (
-            <div
-              key={m.memNum}
-              className={`p-3 border-bottom small ${selectedId === m.memNum && mode !== 'create' ? 'bg-primary text-white' : 'bg-white'}`}
-              style={{ cursor: 'pointer' }}
-              onClick={() => { setSelectedId(m.memNum); setMode('detail'); }}
-            >
-              <div className="fw-semibold">
-                {m.memName ? `${m.memName}${m.memBirthday ? `(${String(m.memBirthday).slice(0,10)})` : ''}` : '-'}
-              </div>
-              <div className={`mt-1 small ${selectedId === m.memNum && mode!=='create' ? 'text-white-50':'text-muted'}`}>
-                <i className="bi bi-person-badge me-1"></i>{m.trainerName || '담당 미지정'}
-                <span className="mx-2">·</span>
-                <i className="bi bi-ticket-detailed me-1"></i>{m.voucherEndDate ? `${String(m.voucherEndDate).slice(0,10)} 까지` : '회원권 없음'}
-                <span className="mx-2">·</span>
-                <i className="bi bi-dumbbell me-1"></i>잔여 PT {m.ptRemain ?? 0}
-                <span className="float-end">
-                  <span className={`badge rounded-pill ${m.membershipStatus==='미사용중' ? 'bg-secondary' : 'bg-success'}`}>
-                    {m.membershipStatus || '-'}
-                  </span>
-                </span>
-              </div>
-            </div>
-          ))}
-          {sortedMembers.length === 0 && (
+          {loading ? (
+            <div className="p-3 text-center text-muted">불러오는 중…</div>
+          ) : sortedMembers.length === 0 ? (
             <div className="p-3 text-center text-muted">검색된 회원이 없습니다.</div>
+          ) : (
+            sortedMembers.map((m) => (
+              <div
+                key={m.memNum}
+                className={`p-3 border-bottom small ${selectedId === m.memNum && mode !== 'create' ? 'bg-primary text-white' : 'bg-white'}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => { setSelectedId(m.memNum); setMode('detail'); }}
+              >
+                <div className="fw-semibold">
+                  {m.memName ? `${m.memName}${m.memBirthday ? `(${String(m.memBirthday).slice(0,10)})` : ''}` : '-'}
+                </div>
+                <div className={`mt-1 small ${selectedId === m.memNum && mode!=='create' ? 'text-white-50':'text-muted'}`}>
+                  <i className="bi bi-person-badge me-1"></i>{m.trainerName || '담당 미지정'}
+                  <span className="mx-2">·</span>
+                  <i className="bi bi-ticket-detailed me-1"></i>{m.voucherEndDate ? `${String(m.voucherEndDate).slice(0,10)} 까지` : '회원권 없음'}
+                  <span className="mx-2">·</span>
+                  <i className="bi bi-dumbbell me-1"></i>잔여 PT {m.ptRemain ?? 0}
+                  <span className="float-end">
+                    <span className={`badge rounded-pill ${m.membershipStatus==='미사용중' ? 'bg-secondary' : 'bg-success'}`}>
+                      {m.membershipStatus || '-'}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            ))
           )}
         </div>
+
       </div>
 
       {/* 오른쪽 패널 */}

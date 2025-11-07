@@ -12,3 +12,7 @@
   background-color: #f39c12 !important; /* 상담 */
   color: #fff !important;
 }
+
+/* 클릭 버튼 기본 스타일 */
+.item-btn { background: transparent; border: 0; cursor: pointer; text-align: left; }
+.item-btn:focus { outline: none; }

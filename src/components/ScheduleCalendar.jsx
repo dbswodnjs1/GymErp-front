@@ -1,10 +1,10 @@
 // src/components/ScheduleCalendar.jsx
+
 import React, { useEffect, useState, useMemo } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { ko } from "date-fns/locale";
-import ScheduleOpenModal from "./ScheduleOpenModal";
-import CustomToolbar from "./CustomToolbar"; // ★ 외부 툴바 사용
+import CustomToolbar from "./CustomToolbar";             // 그대로 사용
 import "bootstrap/dist/css/bootstrap.min.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "../components/css/ScheduleCalendar.css";
@@ -17,6 +17,7 @@ const localizer = dateFnsLocalizer({
   getDay,
   locales,
 });
+
 
 /** ✅ 주말 배경 (CSS 없이 inline) */
 const weekendPropGetter = (date) => {
@@ -32,16 +33,17 @@ const ymd = (d) =>
     d.getDate()
   ).padStart(2, "0")}`;
 
+
 function ScheduleCalendar({
   events,
   onSelectSlot,
-  onSelectEvent,
+  onSelectEvent,                                         // ★ FIX: 부모 위임
   isAdmin = false,
   focusDate,
 }) {
   const [currentView, setCurrentView] = useState("month");
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [more, setMore] = useState({ show: false, date: null, events: [] });
+
 
   // ✅ 공휴일 상태
   const [holidaySet, setHolidaySet] = useState(() => new Set());
@@ -53,6 +55,7 @@ function ScheduleCalendar({
       setCurrentDate(focusDate);
     }
   }, [focusDate]);
+
 
   // ✅ 현재 표시 연도(달력 네비에 맞춰) 기준으로 공휴일 로드
   const currentYear = useMemo(() => currentDate.getFullYear(), [currentDate]);
@@ -196,6 +199,7 @@ function ScheduleCalendar({
         onClose={() => setMore((s) => ({ ...s, show: false }))}
       />
     </>
+
   );
 }
 

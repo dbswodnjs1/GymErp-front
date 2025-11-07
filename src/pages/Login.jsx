@@ -1,5 +1,7 @@
 // src/pages/Login.jsx
 
+import '../styles/floating-input.css';
+
 import axios from 'axios';
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
@@ -79,32 +81,27 @@ function Login() {
                 )}
 
                 <form onSubmit={handleLogin}>
-                    <div className="mb-3">
-                        <label htmlFor="" className="form-label fw-semibold">
-                            <i className="bi bi-envelope me-2"></i>이메일
-                        </label>
-                        <input type="text" className="form-control form-control-lg" placeholder="이메일을 입력하세요" value={empEmail} onChange={(e)=>setEmpEmail(e.target.value)} required disabled={loading} autoFocus />
-                    </div>
-                    <div className="mb-4">
-                        <label className="form-label fw-semibold">
-                            <i className="bi bi-lock me-2"></i>비밀번호
-                        </label>
-                        <input type="password" className="form-control form-control-lg" placeholder="비밀번호를 입력하세요" value={password} onChange={(e)=> setPassword(e.target.value)} required disabled={loading}/>
-                    </div>
-                    <button type="submit" className="btn btn-primary btn-log w-100 py-3 fw-semibold" disabled={loading} style={{borderRadius: "10px"}}>
-                        { loading ? (
-                            <>
-                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                로그인 중...
-                            </>
-                        ) : (
-                            <>
-                                <i className="bi bi-box-arrow-in-right me-2"></i>
-                                로그인
-                            </>
-                        )}
-                    </button>
+                <div className="mb-3 float-field">
+                    <input id="login-email" type="text" className="input" placeholder=" " value={empEmail} onChange={(e)=>setEmpEmail(e.target.value)}
+                        required disabled={loading} autoComplete="username" autoFocus/>
+                    <label htmlFor="login-email" className="label">
+                        Email
+                    </label>
+                </div>
+
+                <div className="mb-4 float-field">
+                    <input  id="login-password" type="password"  className="input" placeholder=" " value={password} onChange={(e)=> setPassword(e.target.value)}
+                        required disabled={loading} autoComplete="current-password"/>
+                    <label htmlFor="login-password" className="label">
+                        Password
+                    </label>
+                </div>
+
+                <button type="submit" className="btn btn-primary w-100 py-3 fw-semibold" disabled={loading} style={{borderRadius:"10px"}}>
+                    {loading ? (<><span className="spinner-border spinner-border-sm me-2" />로그인 중...</>) : (<> <i className="bi bi-box-arrow-in-right me-2" />로그인 </>)}
+                </button>
                 </form>
+
 
                 <div className="text-center mt-4">
                     <small className="text-muted">

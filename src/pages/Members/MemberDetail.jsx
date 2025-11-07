@@ -1,11 +1,13 @@
-// =============================================
-// src/pages/members/MemberDetail.jsx  (상세보기)
-// - 단일 회원 상세 조회 + 액션 버튼(수정/삭제/목록)
-// =============================================
+// =============================================================
+// src/pages/members/MemberDetail.jsx
+// - 상세 정보 + 프로필 썸네일 표시(우상단) + URL 행(선택)
+// =============================================================
 import { useEffect, useState } from "react";
 import axios from "axios";
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 export default function MemberDetail({ memNum, onBack, onEdit, onDelete }) {
+  const API_BASE = (import.meta?.env?.VITE_API_BASE) || (typeof window !== 'undefined' && window.API_BASE) || "http://localhost:9000";
   const [data, setData] = useState(null);
   const load = async () => {
     try {
@@ -21,7 +23,18 @@ export default function MemberDetail({ memNum, onBack, onEdit, onDelete }) {
 
   return (
     <div className="card border-0 shadow-sm rounded-4">
-      <div className="card-body">
+      <div className="card-body position-relative">
+        {/* 프로필 썸네일 */}
+        <div className="position-absolute top-0 end-0 translate-middle-y me-3" style={{ marginTop: '24px' }}>
+          <div className="rounded-circle overflow-hidden border" style={{width:72, height:72, background:'#f8f9fa'}}>
+            {data.memProfile
+              ? <img src={data.memProfile?.startsWith('http') ? data.memProfile : `${API_BASE}/upload/${data.memProfile}`} alt="profile" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+              : <div className="d-flex w-100 h-100 justify-content-center align-items-center text-muted">
+                  <i className="bi bi-person-circle fs-3" />
+                </div>}
+          </div>
+        </div>
+
         <h4 className="fw-bold mb-4">회원 상세 정보</h4>
         <table className="table table-borderless">
           <tbody>
@@ -41,6 +54,7 @@ export default function MemberDetail({ memNum, onBack, onEdit, onDelete }) {
               </td>
             </tr>
             <tr><th>잔여 PT</th><td>{data.ptRemain ?? 0}</td></tr>
+            <tr><th>프로필</th><td>{data.memProfile ? data.memProfile : '-'}</td></tr>
             <tr><th>등록/수정일</th><td>{(data.memCreated?.slice?.(0,10) || '-') + ' / ' + (data.memUpdated?.slice?.(0,10) || '-')}</td></tr>
           </tbody>
         </table>
