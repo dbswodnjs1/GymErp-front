@@ -10,11 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-<<<<<<< HEAD
     "@hookform/resolvers": "^5.2.2",
-=======
-    "apexcharts": "^5.3.6",
->>>>>>> upstream/frontend
     "@toast-ui/editor": "^3.2.2",
     "axios": "^1.13.1",
     "bootstrap": "^5.3.8",
@@ -37,13 +33,9 @@
     "react-icons": "^5.5.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.9.5",
-<<<<<<< HEAD
+    "recharts": "^2.15.4",
     "redux": "^5.0.1",
     "yup": "^1.7.1"
-=======
-    "recharts": "^3.3.0",
-    "redux": "^5.0.1"
->>>>>>> upstream/frontend
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
