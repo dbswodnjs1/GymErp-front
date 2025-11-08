@@ -12,7 +12,7 @@ function TrainerPerformanceChart() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get("/api/v1/analytics/trainer/performance");
+        const res = await axios.get("/v1/analytics/trainer/performance");
         setData(res.data || []);
       } catch (err) {
         console.error("트레이너 실적 그래프 조회 실패:", err);
@@ -79,7 +79,7 @@ function TrainerPerformanceChart() {
         data: data.map((d) =>
           Math.abs(Number(d.TOTAL_SESSIONS || d.total_sessions || 0))
         ),
-        colors: ["#1565C0", "#42A5F5", "#90CAF9"],
+        colors: ["#1565C0", "#159277ff", "#FFA726"],
       },
     ],
   };

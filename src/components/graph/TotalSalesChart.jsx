@@ -15,7 +15,7 @@ function TotalSalesChart() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get("/api/v1/analytics/sales/total");
+        const res = await axios.get("/v1/analytics/sales/total");
         console.log("✅ 실제 응답 구조:", res.data);
         const list = (res.data || []).map((d) => [
           d.LABEL || d.label,

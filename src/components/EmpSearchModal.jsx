@@ -10,7 +10,8 @@ export default function EmpSearchModal({
   show,
   onHide,
   onExited,
-  onConfirm,       
+  onSuccess,      // ✅ onConfirm → onSuccess로 통일
+  selectedEmp,    // ✅ 부모에서 전달받은 선택된 직원 정보
 }) {
   // ---- 선택/장바구니 정책(하드 코딩) ----
   const MULTI_SELECT = true;
@@ -57,13 +58,23 @@ export default function EmpSearchModal({
     }
   };
 
-  // 모달 열릴 때 초기화 & 첫 로드
+  // ✅ 모달 열릴 때 초기화 & 첫 로드
   useEffect(() => {
     if (!show) return;
     setPage(1);
     setKeyword("");
-    setSelected({});
     fetchList({ kw: "", pg: 1 });
+
+    // ✅ 이미 선택된 직원이 있으면 유지
+    if (selectedEmp && selectedEmp.empNum) {
+      setSelected({
+        [selectedEmp.empNum]: {
+          empNum: selectedEmp.empNum,
+          empName: selectedEmp.empName,
+        },
+      });
+    }
+
     return () => controllerRef.current?.abort();
   }, [show]);
 
@@ -130,13 +141,14 @@ export default function EmpSearchModal({
 
   const clearBasket = () => setSelected({});
 
+  // ✅ 확인 버튼 핸들러 수정
   const handleConfirm = () => {
     if (selectedCount === 0) {
       alert("직원을 선택하세요.");
       return;
     }
-    onConfirm?.(selectedArr);
-    onHide?.();
+    onSuccess?.(selectedArr); // 부모로 전달
+    onHide?.(); // 닫기
   };
 
   return (
@@ -260,7 +272,7 @@ export default function EmpSearchModal({
             <div className="border rounded p-2 h-100">
               <div className="d-flex align-items-center justify-content-between mb-2">
                 <div className="fw-semibold">
-                  선택한 직원3
+                  선택한 직원
                   <Badge bg={selectedCount >= MAX_SELECT ? "danger" : "secondary"} className="ms-2">
                     {selectedCount} / {MAX_SELECT}
                   </Badge>

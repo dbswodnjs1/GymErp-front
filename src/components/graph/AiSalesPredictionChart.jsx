@@ -10,7 +10,7 @@ function AiSalesPredictionChart() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get("/api/v1/analytics/ai/sales");
+        const res = await axios.get("/v1/analytics/ai/sales");
         console.log("✅ AI 매출 예측 응답:", res.data);
         setData(res.data || []);
       } catch (err) {
@@ -47,7 +47,7 @@ function AiSalesPredictionChart() {
   const options = {
     chart: { type: "line", backgroundColor: "transparent" },
     title: {
-      text: "AI 매출 예측 (작년 + 올해 + 내년 예측)",
+      text: "",
       style: { fontSize: "16px", fontWeight: "bold" },
     },
     xAxis: {
@@ -98,7 +98,7 @@ function AiSalesPredictionChart() {
   };
 
   return (
-    <ChartWrapper title="AI 매출 예측 그래프">
+    <ChartWrapper title="AI 매출 예측 (작년 + 올해 + 내년 예측)">
       <HighchartsReact highcharts={Highcharts} options={options} />
     </ChartWrapper>
   );

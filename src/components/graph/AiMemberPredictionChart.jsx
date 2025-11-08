@@ -23,7 +23,7 @@ function AiMemberPredictionChart() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await axios.get("/api/v1/analytics/ai/members");
+        const res = await axios.get("/v1/analytics/ai/members");
         setData(res.data || []);
       } catch (err) {
         console.error("AI 회원 예측 데이터 로드 실패:", err);
