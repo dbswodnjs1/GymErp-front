@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import api from "../../api/axiosConfig";
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import "../../styles/detail-pane.css";
+import "../../components/css/detail-pane.css";
 
 // 백엔드 베이스 URL (.env의 VITE_API_BASE 없으면 기본값)
 const API_BASE = import.meta?.env?.VITE_API_BASE || "/api";

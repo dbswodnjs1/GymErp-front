@@ -5,7 +5,7 @@ import EmpDetail from "./EmpDetail.jsx";
 import EmpModal from "../components/EmpModal";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import "../components/css/EmpList.css";
-import "../styles/detail-pane.css";
+import "../components/css/detail-pane.css";
 
 export default function EmpList() {
   // 목록/선택/모드 상태
