@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  LabelList, // ✅ 추가
+  LabelList,
 } from "recharts";
 import ChartWrapper from "./ChartWrapper";
 
@@ -18,7 +18,9 @@ function AiMemberPredictionChart() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // ✅ 데이터 로드 (AI 회원 예측)
+  /* ===============================
+     1. 데이터 조회 (AI 회원 예측)
+  =============================== */
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -34,7 +36,9 @@ function AiMemberPredictionChart() {
     fetchData();
   }, []);
 
-  // ✅ 로딩 상태
+  /* ===============================
+     2. 로딩 / 데이터 없음 처리
+  =============================== */
   if (loading)
     return (
       <ChartWrapper title="연말 회원수 예측 그래프">
@@ -42,7 +46,6 @@ function AiMemberPredictionChart() {
       </ChartWrapper>
     );
 
-  // ✅ 데이터 없음
   if (!data || data.length === 0)
     return (
       <ChartWrapper title="연말 회원수 예측 그래프">
@@ -50,12 +53,16 @@ function AiMemberPredictionChart() {
       </ChartWrapper>
     );
 
-  // ✅ 월 보정 + 예측 라벨 처리
+  /* ===============================
+     3. 데이터 가공 (월 보정 및 정렬)
+  =============================== */
   const processedData = data
     .map((d) => {
       const rawMonth = d.month || d.MONTH || "";
       const dataType = d.data_type || d.DATA_TYPE || "";
       let adjustedMonth = rawMonth;
+
+      // 예측 데이터는 한 달 전으로 보정
       if (dataType === "예측") {
         const dateObj = new Date(rawMonth + "-01");
         dateObj.setMonth(dateObj.getMonth() - 1);
@@ -63,6 +70,7 @@ function AiMemberPredictionChart() {
           dateObj.getMonth() + 1
         ).padStart(2, "0")}`;
       }
+
       return {
         month: adjustedMonth,
         predictedCount: d.predictedCount || d.PREDICTEDCOUNT,
@@ -71,16 +79,24 @@ function AiMemberPredictionChart() {
     })
     .sort((a, b) => a.month.localeCompare(b.month));
 
+  /* ===============================
+     4. 렌더링
+  =============================== */
   return (
-    <ChartWrapper title="AI 분석 그래프(연말 회원수 예측)">
+    <ChartWrapper title="연말 회원수 예측">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={processedData}>
+          {/* (1) 격자선 */}
           <CartesianGrid strokeDasharray="3 3" />
+
+          {/* (2) X축 / Y축 */}
           <XAxis
             dataKey="month"
             tickFormatter={(v) => `${parseInt(v.split("-")[1])}월`}
           />
           <YAxis />
+
+          {/* (3) 툴팁 */}
           <Tooltip
             content={({ active, payload, label }) => {
               if (active && payload && payload.length) {
@@ -105,8 +121,10 @@ function AiMemberPredictionChart() {
               return null;
             }}
           />
+
+          {/* (4) 막대그래프 */}
           <Bar dataKey="predictedCount">
-            {/* ✅ 각 막대 위에 회원 수 표시 */}
+            {/* (4-1) 각 막대 위 회원수 표시 */}
             <LabelList
               dataKey="predictedCount"
               position="top"
@@ -117,6 +135,8 @@ function AiMemberPredictionChart() {
                 fontWeight: "600",
               }}
             />
+
+            {/* (4-2) 막대 색상 처리 (예측월 강조) */}
             {processedData.map((d, idx) => {
               const color =
                 d.month.includes("2025-11") || d.month.includes("2025-12")

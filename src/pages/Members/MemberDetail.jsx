@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import api from "../../api/axiosConfig";
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import "../../styles/detail-pane.css";
+import "../../components/css/detail-pane.css";
 
 export default function MemberDetail({ memNum, onBack, onEdit, onDelete }) {
   const API_BASE =

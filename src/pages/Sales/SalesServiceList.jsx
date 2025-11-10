@@ -6,6 +6,8 @@ import { FaSearch } from "react-icons/fa";
 import MemberSearchModal from "../../components/MemberSearchModal";
 import EmpSearchModal from "../../components/EmpSearchModal";
 
+// axios.defaults.baseURL = "";
+
 function SalesServiceList() {
   const [salesList, setSalesList] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
@@ -14,7 +16,7 @@ function SalesServiceList() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  /* ✅ 필터 상태 */
+  // 필터 상태
   const [filters, setFilters] = useState({
     startDate: "",
     endDate: "",
@@ -25,15 +27,13 @@ function SalesServiceList() {
     productKeyword: "",
   });
 
-  /* ✅ 모달 상태 */
+  // 모달 상태
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [showEmpModal, setShowEmpModal] = useState(false);
 
   const tableRef = useRef(null);
 
-  /* ===============================
-      [1] 데이터 로딩
-  =============================== */
+  // 1. 데이터 로딩
   useEffect(() => {
     fetchSalesList();
   }, [page, filters]);
@@ -63,9 +63,7 @@ function SalesServiceList() {
     }
   };
 
-  /* ===============================
-      [2] 필터 핸들러
-  =============================== */
+  // 2. 필터 핸들러
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
@@ -82,9 +80,7 @@ function SalesServiceList() {
     });
   };
 
-  /* ===============================
-      [3] 모달 선택 핸들러
-  =============================== */
+  // 3. 모달 선택 핸들러
   const handleSelectMember = (member) => {
     setFilters((prev) => ({
       ...prev,
@@ -108,9 +104,7 @@ function SalesServiceList() {
     navigate(`/sales/salesservicedetail/${id}`);
   const handleCreate = () => navigate("/sales/salesservicecreate");
 
-  /* ===============================
-      [4] 렌더링
-  =============================== */
+  // 4. 렌더링
   return (
     <div
       className="d-flex"
@@ -143,9 +137,7 @@ function SalesServiceList() {
             <br />
           </h2>
 
-          {/* ===============================
-              [필터 바 + 돋보기 아이콘 모달 연결]
-          =============================== */}
+          {/* 필터 바 + 돋보기 아이콘 모달 연결 */}
           <div
             className="d-flex align-items-center flex-nowrap justify-content-end"
             style={{
@@ -241,9 +233,7 @@ function SalesServiceList() {
             </button>
           </div>
 
-          {/* ===============================
-              [테이블 전체]
-          =============================== */}
+          {/* 테이블 전체 */}
           <div
             ref={tableRef}
             style={{
@@ -384,9 +374,7 @@ function SalesServiceList() {
             </button>
           </div>
 
-          {/* ===============================
-              [모달 연결]
-          =============================== */}
+          {/* 모달 연결 */}
           <MemberSearchModal
             show={showMemberModal}
             onHide={() => setShowMemberModal(false)}
@@ -398,14 +386,14 @@ function SalesServiceList() {
             onSuccess={(selected) => {
               if (selected && selected.length > 0) {
                 const emp = selected[0];
-                handleSelectEmp(emp); // ✅ 이름 반영
+                handleSelectEmp(emp);
               }
               setShowEmpModal(false);
             }}
             selectedEmp={{
               empNum: filters.employee,
               empName: filters.employeeName,
-            }} // ✅ 이전 선택 유지
+            }}
           />
         </div>
       </main>

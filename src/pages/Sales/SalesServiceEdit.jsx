@@ -31,7 +31,7 @@ function SalesServiceEdit() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ✅ 모달 상태
+  // 모달 상태
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
 
@@ -43,7 +43,7 @@ function SalesServiceEdit() {
 
   const parseNumber = (value) => Number(value.replace(/[^0-9]/g, "")) || 0;
 
-  // 초기 데이터 로딩
+  // 1. 초기 데이터 로딩
   useEffect(() => {
     if (!id) return;
 
@@ -123,7 +123,7 @@ function SalesServiceEdit() {
       </div>
     );
 
-  // 입력값 변경
+  // 2. 입력값 변경
   const handleChange = (e) => {
     const { name, value } = e.target;
     const num = parseNumber(value);
@@ -145,7 +145,7 @@ function SalesServiceEdit() {
     }
   };
 
-  // ✅ 회원 선택 완료
+  // 회원 선택 완료
   const handleSelectMember = (member) => {
     setForm((prev) => ({
       ...prev,
@@ -155,7 +155,7 @@ function SalesServiceEdit() {
     setShowMemberModal(false);
   };
 
-  // ✅ 서비스 선택 완료
+  // 서비스 선택 완료
   const handleSelectService = (service) => {
     if (!service) return;
     const price = Number(service.price ?? 0);
@@ -177,15 +177,13 @@ function SalesServiceEdit() {
     setShowServiceModal(false);
   };
 
-  // 수정 확인
+  // ✅ 3. 수정 확인 (예외 메시지 처리 강화)
   const handleConfirm = async (e) => {
     e.preventDefault();
     try {
-      // ✅ 로그인한 사용자 정보에서 empNum 가져오기
       const storedUser = sessionStorage.getItem("user");
       const currentEmpNum = storedUser ? JSON.parse(storedUser).empNum : null;
-      // ✅ UI에는 기존 empName 그대로 표시,
-      // ✅ 요청은 로그인한 직원(empNum)으로 전송
+
       const payload = {
         serviceSalesId: Number(id),
         serviceName: form.serviceName,
@@ -196,19 +194,31 @@ function SalesServiceEdit() {
         actualAmount: form.actualAmount,
         discount: form.discount,
         memNum: form.memNum,
-        empNum: currentEmpNum ?? form.empNum, 
+        empNum: currentEmpNum ?? form.empNum,
       };
 
       const res = await axios.put(`/v1/sales/services/${id}`, payload);
-      alert(res.data.message || "수정이 완료되었습니다!");
-      navigate(`/sales/salesservicedetail/${id}`);
+
+      if (res.data.success) {
+        alert("판매 내역이 성공적으로 수정되었습니다.");
+        navigate(`/sales/salesservicedetail/${id}`);
+      } else {
+        const msg = res.data.message || "수정 실패: 요청을 다시 확인해주세요.";
+
+        // ✅ 최저점 보장 관련 메시지 강조
+        if (msg.includes("최소 1회") || msg.includes("1일 이상")) {
+          alert(`❗ ${msg}`);
+        } else {
+          alert(msg);
+        }
+      }
     } catch (err) {
       console.error("수정 오류:", err);
-      alert("수정 중 오류가 발생했습니다.");
+      alert(err.response?.data?.message || "서버 오류가 발생했습니다.");
     }
   };
 
-  // 수정 취소
+  // 4. 수정 취소
   const handleCancel = () => {
     navigate(`/sales/salesservicedetail/${id}`);
   };
@@ -219,7 +229,7 @@ function SalesServiceEdit() {
         {id}번 서비스 판매 내역 수정
       </h4>
 
-      {/* ✅ 모달 연결 */}
+      {/* 모달 연결 */}
       <MemberSearchModal
         show={showMemberModal}
         onHide={() => setShowMemberModal(false)}
@@ -267,7 +277,7 @@ function SalesServiceEdit() {
                       right: "calc(50% - 170px - 45px)",
                       height: "38px",
                     }}
-                    onClick={() => setShowServiceModal(true)} // ✅ 서비스 모달 열기
+                    onClick={() => setShowServiceModal(true)}
                   >
                     <FaSearch />
                   </button>
@@ -318,7 +328,7 @@ function SalesServiceEdit() {
                       right: "calc(50% - 170px - 45px)",
                       height: "38px",
                     }}
-                    onClick={() => setShowMemberModal(true)} // ✅ 회원 모달 열기
+                    onClick={() => setShowMemberModal(true)}
                   >
                     <FaSearch />
                   </button>
@@ -380,7 +390,7 @@ function SalesServiceEdit() {
             {/* 총액 */}
             <tr>
               <th className="bg-dark text-white text-center align-middle">
-                총액
+                총액(원)
               </th>
               <td className="bg-light align-middle">
                 <input
@@ -397,7 +407,7 @@ function SalesServiceEdit() {
             {/* 할인금액 */}
             <tr>
               <th className="bg-dark text-white text-center align-middle">
-                할인금액
+                할인금액(원)
               </th>
               <td className="bg-light align-middle">
                 <input
@@ -414,7 +424,7 @@ function SalesServiceEdit() {
             {/* 최종금액 */}
             <tr>
               <th className="bg-dark text-white text-center align-middle">
-                최종금액
+                최종금액(원)
               </th>
               <td className="bg-light align-middle">
                 <input

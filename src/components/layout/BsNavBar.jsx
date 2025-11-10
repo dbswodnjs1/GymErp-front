@@ -1,5 +1,5 @@
 // src/components/BsNavBar.jsx
-import axios from "axios";
+import api from "../../api/axiosConfig";
 import React, { useState } from "react";
 import { Container, Navbar, Dropdown, Modal, Tabs, Tab, Form, Button, Row, Col } from "react-bootstrap";
 import { useSelector } from "react-redux";
@@ -23,7 +23,7 @@ export default function BsNavBar() {
 
   try {
     setPwBusy(true);
-    const { data } = await axios.post("/v1/emp/change-password", {
+    const { data } = await api.post("/v1/emp/change-password", {
       currentPassword: pw.current,
       newPassword: pw.next,
     });

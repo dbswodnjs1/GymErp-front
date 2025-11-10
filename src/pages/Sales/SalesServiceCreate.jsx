@@ -2,13 +2,10 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaSearch } from "react-icons/fa";
 import MemberSearchModal from "../../components/MemberSearchModal";
-import SalesServiceSearchModal from "../../components/SalesServiceSearchModal"; // ✅ 서비스 검색 모달 import
+import SalesServiceSearchModal from "../../components/SalesServiceSearchModal";
 
-
-
-// ✅ 프록시 강제 사용 (절대경로 방지)
+// 프록시 강제 사용 (절대경로 방지)
 // axios.defaults.baseURL = "";
-
 
 function SalesServiceCreate() {
   const [form, setForm] = useState({
@@ -26,9 +23,9 @@ function SalesServiceCreate() {
   });
 
   const [showMemberModal, setShowMemberModal] = useState(false);
-  const [showServiceModal, setShowServiceModal] = useState(false); // ✅ 서비스 모달 상태
+  const [showServiceModal, setShowServiceModal] = useState(false);
 
-  // ✅ 로그인한 직원 empNum 자동 세팅
+  // 1. 로그인한 직원 empNum 자동 세팅
   useEffect(() => {
     try {
       const storedUser = sessionStorage.getItem("user");
@@ -36,7 +33,7 @@ function SalesServiceCreate() {
         const user = JSON.parse(storedUser);
         if (user.empNum) {
           setForm((prev) => ({ ...prev, empNum: user.empNum }));
-          console.log("✅ 로그인한 직원:", user.empName, `(ID: ${user.empNum})`);
+          console.log("로그인한 직원:", user.empName, `(ID: ${user.empNum})`);
         }
       }
     } catch (err) {
@@ -51,14 +48,12 @@ function SalesServiceCreate() {
 
   const parseNumber = (value) => Number(value.replace(/[^0-9]/g, "")) || 0;
 
-  /* ===============================
-     [1] 서비스 선택 모달 열기
-  =============================== */
+  // 2. 서비스 선택 모달 열기
   const handleSelectService = () => {
     setShowServiceModal(true);
   };
 
-  // ✅ SalesServiceSearchModal → 선택된 서비스 데이터 반영
+  // 3. 서비스 선택 완료 후 데이터 반영
   const handleServiceSelect = (service) => {
     if (!service) return;
     const price = Number(service.price ?? 0);
@@ -78,12 +73,10 @@ function SalesServiceCreate() {
     }));
 
     setShowServiceModal(false);
-    console.log("✅ 선택된 서비스:", service.serviceName, `(ID: ${service.serviceId})`);
+    console.log("선택된 서비스:", service.serviceName, `(ID: ${service.serviceId})`);
   };
 
-  /* ===============================
-     [2] 회원 검색 모달 연동
-  =============================== */
+  // 4. 회원 검색 모달 열기 및 선택 반영
   const handleSelectMember = () => setShowMemberModal(true);
 
   const handleMemberSelect = (member) => {
@@ -93,12 +86,10 @@ function SalesServiceCreate() {
       memberName: member.memName,
     }));
     setShowMemberModal(false);
-    console.log("✅ 선택된 회원:", member.memName, `(ID: ${member.memNum})`);
+    console.log("선택된 회원:", member.memName, `(ID: ${member.memNum})`);
   };
 
-  /* ===============================
-     [3] 입력값 변경
-  =============================== */
+  // 5. 입력값 변경 처리
   const handleChange = (e) => {
     const { name, value } = e.target;
     const num = parseNumber(value);
@@ -118,26 +109,24 @@ function SalesServiceCreate() {
     }
   };
 
-  /* ===============================
-     [4] 등록 요청
-  =============================== */
+  // 6. 등록 요청 (alert 처리 수정 완료 ✅)
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // ✅ 로그인한 사용자 정보에서 empNum 가져오기
       const storedUser = sessionStorage.getItem("user");
       const currentEmpNum = storedUser ? JSON.parse(storedUser).empNum : null;
-      
-      // ✅ payload에 empNum 포함 (UI에는 표시 안 됨)
+
       const { memberName, ...requestData } = form;
       const payload = {
         ...requestData,
         empNum: currentEmpNum ?? form.empNum,
       };
+
       const res = await axios.post("/v1/sales/services", payload);
 
-      if (res.data.result > 0) {
-        alert(res.data.message);
+      // ✅ 등록 성공
+      if (res.data?.success || res.data?.result > 0) {
+        alert(res.data.message || "판매가 성공적으로 등록되었습니다.");
         setForm({
           serviceId: "",
           serviceName: "",
@@ -151,12 +140,21 @@ function SalesServiceCreate() {
           memberName: "",
           empNum: currentEmpNum,
         });
-      } else {
-        alert("등록 실패. 다시 시도해주세요.");
+      }
+      // ❌ 회원권이 유효하지 않을 때
+      else if (
+        res.data?.message?.includes("회원권") ||
+        res.data?.message?.includes("유효하지")
+      ) {
+        alert(`❗ ${res.data.message}`);
+      }
+      // ⚠ 기타 실패 케이스
+      else {
+        alert(res.data?.message || "등록 실패. 다시 시도해주세요.");
       }
     } catch (err) {
-      console.error(err);
-      alert("등록 중 오류가 발생했습니다.");
+      console.error("등록 중 오류:", err);
+      alert(err.response?.data?.message || "등록 중 서버 오류가 발생했습니다.");
     }
   };
 
@@ -166,14 +164,14 @@ function SalesServiceCreate() {
     <div className="container mt-5" style={{ maxWidth: "700px" }}>
       <h4 className="fw-bold mb-5 text-start">서비스 판매 등록</h4>
 
-      {/* ✅ 회원 검색 모달 */}
+      {/* 회원 검색 모달 */}
       <MemberSearchModal
         show={showMemberModal}
         onHide={() => setShowMemberModal(false)}
         onSelect={handleMemberSelect}
       />
 
-      {/* ✅ 서비스 검색 모달 */}
+      {/* 서비스 검색 모달 */}
       <SalesServiceSearchModal
         show={showServiceModal}
         onHide={() => setShowServiceModal(false)}
@@ -186,7 +184,7 @@ function SalesServiceCreate() {
       >
         <table className="table table-striped m-0 align-middle text-center">
           <tbody>
-            {/* [1] 상품명 */}
+            {/* 1. 상품명 */}
             <tr>
               <th
                 className="bg-dark text-white text-center align-middle"
@@ -211,7 +209,7 @@ function SalesServiceCreate() {
                     type="button"
                     className="btn btn-outline-secondary position-absolute"
                     style={{ right: "calc(50% - 170px - 45px)", height: "38px" }}
-                    onClick={handleSelectService} // ✅ 모달 열기
+                    onClick={handleSelectService}
                   >
                     <FaSearch />
                   </button>
@@ -219,7 +217,7 @@ function SalesServiceCreate() {
               </td>
             </tr>
 
-            {/* [2] 구분 */}
+            {/* 2. 구분 */}
             <tr>
               <th className="bg-dark text-white text-center align-middle">
                 구분
@@ -236,7 +234,7 @@ function SalesServiceCreate() {
               </td>
             </tr>
 
-            {/* [3] 회원 */}
+            {/* 3. 회원 */}
             <tr>
               <th className="bg-dark text-white text-center align-middle">
                 회원
@@ -266,7 +264,7 @@ function SalesServiceCreate() {
               </td>
             </tr>
 
-            {/* [4] 횟수/일수 */}
+            {/* 4. 횟수/일수 */}
             <tr>
               <th className="bg-dark text-white text-center align-middle">
                 횟수/일수
@@ -283,7 +281,7 @@ function SalesServiceCreate() {
               </td>
             </tr>
 
-            {/* [5] 실제 횟수/일수 */}
+            {/* 5. 실제 횟수/일수 */}
             <tr>
               <th className="bg-dark text-white text-center align-middle">
                 실제 횟수/일수
@@ -300,10 +298,10 @@ function SalesServiceCreate() {
               </td>
             </tr>
 
-            {/* [6] 금액 */}
+            {/* 6. 금액 */}
             <tr>
               <th className="bg-dark text-white text-center align-middle">
-                금액
+                금액(원)
               </th>
               <td className="bg-light align-middle">
                 <input
@@ -317,10 +315,10 @@ function SalesServiceCreate() {
               </td>
             </tr>
 
-            {/* [7] 할인금액 */}
+            {/* 7. 할인금액 */}
             <tr>
               <th className="bg-dark text-white text-center align-middle">
-                할인금액
+                할인금액(원)
               </th>
               <td className="bg-light align-middle">
                 <input
@@ -334,10 +332,10 @@ function SalesServiceCreate() {
               </td>
             </tr>
 
-            {/* [8] 총액 */}
+            {/* 8. 총액 */}
             <tr>
               <th className="bg-dark text-white text-center align-middle">
-                총액
+                총액(원)
               </th>
               <td className="bg-light align-middle">
                 <input

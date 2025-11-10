@@ -1,4 +1,4 @@
-// ⚠️ import 및 초기화 부분 절대 수정 금지
+// import 및 초기화 부분은 수정하지 말 것
 import React, { useEffect, useState } from "react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
@@ -12,11 +12,14 @@ if (typeof HC3D === "function") HC3D(Highcharts);
 function TotalSalesChart() {
   const [data, setData] = useState([]);
 
+  /* ===============================
+     1. 데이터 조회
+  =============================== */
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await axios.get("/v1/analytics/sales/total");
-        console.log("✅ 실제 응답 구조:", res.data);
+        console.log("실제 응답 구조:", res.data);
         const list = (res.data || []).map((d) => [
           d.LABEL || d.label,
           Number(d.TOTAL_SALES || d.total_sales || 0),
@@ -29,8 +32,9 @@ function TotalSalesChart() {
     fetchData();
   }, []);
 
-  
-
+  /* ===============================
+     2. 색상 및 라벨 매핑
+  =============================== */
   const colorMap = {
     PT: "#1565C0",
     VOUCHER: "#42A5F5",
@@ -39,7 +43,6 @@ function TotalSalesChart() {
     SUPPLEMENTS: "#FFCC80",
   };
 
-  // ✅ 범례/라벨 한국어 변환용 매핑
   const labelMap = {
     VOUCHER: "이용권",
     CLOTHES: "의류",
@@ -47,15 +50,18 @@ function TotalSalesChart() {
     SUPPLEMENTS: "보충제",
   };
 
+  /* ===============================
+     3. Highcharts 옵션 설정
+  =============================== */
   const options = {
     chart: {
       type: "pie",
       backgroundColor: "transparent",
       options3d: { enabled: true, alpha: 45, beta: 0, depth: 50, viewDistance: 40 },
-      height: 420,
-      width: 520,
-      marginTop: -50,
-      marginBottom: 70,
+      height: 380,         // (기존 420 → 380)
+      width: 460,          // (기존 520 → 460)
+      marginTop: -30,      // (기존 -50 → -30)
+      marginBottom: 40,    // (기존 70 → 40)
       spacingRight: 80,
     },
     title: { text: null },
@@ -113,8 +119,6 @@ function TotalSalesChart() {
       },
     },
     credits: { enabled: false },
-
-    // ✅ series에 한글 변환 적용
     series: [
       {
         name: "매출액",
@@ -122,7 +126,7 @@ function TotalSalesChart() {
           const key = d[0].toUpperCase();
           const displayName = labelMap[key] || (key === "PT" ? "PT" : d[0]);
           return {
-            name: displayName, // ✅ 툴팁·라벨용 한글명
+            name: displayName,
             y: d[1],
             color: colorMap[key] || "#90CAF9",
           };
@@ -131,6 +135,9 @@ function TotalSalesChart() {
     ],
   };
 
+  /* ===============================
+     4. 렌더링
+  =============================== */
   return (
     <ChartWrapper title="총 매출 그래프(최근 30일)">
       <div
@@ -143,7 +150,7 @@ function TotalSalesChart() {
           margin: "0 auto",
         }}
       >
-        {/* ✅ 그래프 영역 */}
+        {/* (1) 그래프 영역 */}
         <div
           style={{
             flex: "0 0 65%",
@@ -157,7 +164,7 @@ function TotalSalesChart() {
           <HighchartsReact highcharts={Highcharts} options={options} />
         </div>
 
-        {/* ✅ 우측 범례 (수동 렌더링, 한글 변환 적용) */}
+        {/* (2) 우측 범례 (한글 변환 적용) */}
         <div
           style={{
             marginTop: "130px",

@@ -13,7 +13,7 @@ function SalesServiceDetail() {
     memNum: "",
     memName: "",
     empNum: "",
-    empName: "", // ✅ 추가
+    empName: "",
     baseCount: "",
     actualCount: "",
     baseAmount: "",
@@ -25,15 +25,15 @@ function SalesServiceDetail() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ✅ 숫자 포맷 함수
+  // 숫자 포맷 함수
   const formatNumber = (value) =>
     value === null || value === ""
       ? ""
       : value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-  // ✅ 데이터 로딩
+  // 1. 데이터 로딩
   useEffect(() => {
-    if (!id) return; // id가 없으면 axios 호출 방지
+    if (!id) return;
 
     const fetchData = async () => {
       setLoading(true);
@@ -56,7 +56,7 @@ function SalesServiceDetail() {
 
         const today = new Date().toISOString().slice(0, 10);
 
-        //  회원 이름 조회
+        // 회원 이름 조회
         let memName = "";
         if (data.memNum) {
           try {
@@ -67,7 +67,7 @@ function SalesServiceDetail() {
           }
         }
 
-        //  직원 이름 조회
+        // 직원 이름 조회
         let empName = "";
         if (data.empNum) {
           try {
@@ -80,7 +80,7 @@ function SalesServiceDetail() {
 
         setForm({ ...data, memName, empName, updatedAt: today });
       } catch (err) {
-        console.error("❌ 데이터 조회 실패:", err);
+        console.error("데이터 조회 실패:", err);
         setError("데이터 조회 중 오류가 발생했습니다.");
       } finally {
         setLoading(false);
@@ -90,7 +90,7 @@ function SalesServiceDetail() {
     fetchData();
   }, [id]);
 
-  //  로딩 중일 때
+  // 2. 로딩 중일 때
   if (loading) {
     return (
       <div className="text-center mt-5">
@@ -99,7 +99,7 @@ function SalesServiceDetail() {
     );
   }
 
-  //  에러 발생 시
+  // 3. 에러 발생 시
   if (error) {
     return (
       <div className="text-center mt-5 text-danger">
@@ -114,10 +114,7 @@ function SalesServiceDetail() {
     );
   }
 
-  /* ===============================
-       [버튼 이벤트]
-     =============================== */
-
+  // 4. 버튼 이벤트
   const handleEdit = () => navigate(`/sales/salesserviceedit/${id}`);
   const handleConfirm = () => {
     navigate("/sales/salesservicelist", {
@@ -127,6 +124,8 @@ function SalesServiceDetail() {
       },
     });
   };
+
+  // ✅ 삭제 (전체환불 예외 메시지 alert 표시)
   const handleDelete = async () => {
     const confirmed = window.confirm("정말로 삭제하시겠습니까?");
     if (!confirmed) return;
@@ -134,7 +133,8 @@ function SalesServiceDetail() {
     try {
       const res = await axios.delete(`/v1/sales/services/${id}`);
 
-      if (res.status === 200 && res.data?.result > 0) {
+      // ✅ 성공
+      if (res.data?.success) {
         alert(`${id}번 판매 내역이 성공적으로 삭제되었습니다.`);
         navigate("/sales/salesservicelist", {
           state: {
@@ -142,60 +142,199 @@ function SalesServiceDetail() {
             preservedPage: sessionStorage.getItem("salesServicePage"),
           },
         });
-      } else {
-        alert("삭제 요청은 완료되었지만, 서버에서 삭제되지 않았습니다.");
+      }
+      // ⚠ 실패 (예외 메시지 alert 표시)
+      else {
+        const msg = res.data?.message || "삭제 실패: 요청을 다시 확인해주세요.";
+
+        if (
+          msg.includes("환불 불가") ||
+          msg.includes("전체 환불") ||
+          msg.includes("사용") ||
+          msg.includes("불가능")
+        ) {
+          alert(`❗ ${msg}`);
+        } else {
+          alert(msg);
+        }
       }
     } catch (err) {
-      console.error("❌ 삭제 실패:", err);
-      alert("삭제 처리 중 오류가 발생했습니다.");
+      console.error("삭제 실패:", err);
+      alert(err.response?.data?.message || "삭제 처리 중 서버 오류가 발생했습니다.");
     }
   };
 
-  /* ===============================
-       [화면 렌더링]
-     =============================== */
+  // 5. 화면 렌더링
   return (
     <div className="container mt-5" style={{ maxWidth: "700px" }}>
       <h4 className="fw-bold mb-5 text-start">
         {id}번 서비스 판매 내역 조회
       </h4>
 
+      {/* 테이블 - Edit과 동일한 구조 */}
       <form className="border rounded-4 shadow-sm overflow-hidden">
         <table className="table table-striped m-0 align-middle text-center">
           <tbody>
-            {[
-              ["상품명", "serviceName"],
-              ["구분", "serviceType"],
-              ["회원명", "memName"],
-              ["판매자명", "empName"], // ✅ 직원명으로 변경
-              ["횟수/일수", "baseCount"],
-              ["실제 횟수/일수", "actualCount"],
-              ["총액", "baseAmount"],
-              ["할인금액", "discount"],
-              ["최종금액", "actualAmount"],
-            ].map(([label, key]) => (
-              <tr key={key}>
-                <th
-                  className="bg-dark text-white text-center align-middle"
-                  style={{ width: "30%" }}
+            {/* 상품명 */}
+            <tr>
+              <th
+                className="bg-dark text-white text-center align-middle"
+                style={{ width: "30%" }}
+              >
+                상품명
+              </th>
+              <td className="bg-light align-middle position-relative">
+                <div
+                  className="d-flex justify-content-center"
+                  style={{ width: "340px", margin: "0 auto" }}
                 >
-                  {label}
-                </th>
-                <td className="bg-light align-middle">
                   <input
                     type="text"
-                    className="form-control text-center mx-auto"
-                    style={{ width: "340px" }}
-                    value={
-                      ["baseAmount", "discount", "actualAmount"].includes(key)
-                        ? formatNumber(form[key])
-                        : form[key] ?? ""
-                    }
+                    name="serviceName"
+                    className="form-control text-center"
+                    value={form.serviceName}
                     readOnly
+                    style={{ width: "100%" }}
                   />
-                </td>
-              </tr>
-            ))}
+                </div>
+              </td>
+            </tr>
+
+            {/* 구분 */}
+            <tr>
+              <th className="bg-dark text-white text-center align-middle">
+                구분
+              </th>
+              <td className="bg-light align-middle">
+                <input
+                  type="text"
+                  name="serviceType"
+                  className="form-control text-center mx-auto"
+                  style={{ width: "340px" }}
+                  value={form.serviceType}
+                  readOnly
+                />
+              </td>
+            </tr>
+
+            {/* 회원 */}
+            <tr>
+              <th className="bg-dark text-white text-center align-middle">
+                회원
+              </th>
+              <td className="bg-light align-middle">
+                <input
+                  type="text"
+                  name="memName"
+                  className="form-control text-center mx-auto"
+                  style={{ width: "340px" }}
+                  value={form.memName}
+                  readOnly
+                />
+              </td>
+            </tr>
+
+            {/* 직원 */}
+            <tr>
+              <th className="bg-dark text-white text-center align-middle">
+                직원
+              </th>
+              <td className="bg-light align-middle">
+                <input
+                  type="text"
+                  name="empName"
+                  className="form-control text-center mx-auto"
+                  style={{ width: "340px" }}
+                  value={form.empName}
+                  readOnly
+                />
+              </td>
+            </tr>
+
+            {/* 횟수/일수 */}
+            <tr>
+              <th className="bg-dark text-white text-center align-middle">
+                횟수/일수
+              </th>
+              <td className="bg-light align-middle">
+                <input
+                  type="number"
+                  name="baseCount"
+                  className="form-control text-center mx-auto"
+                  style={{ width: "340px" }}
+                  value={form.baseCount}
+                  readOnly
+                />
+              </td>
+            </tr>
+
+            {/* 실제 횟수/일수 */}
+            <tr>
+              <th className="bg-dark text-white text-center align-middle">
+                실제 횟수/일수
+              </th>
+              <td className="bg-light align-middle">
+                <input
+                  type="number"
+                  name="actualCount"
+                  className="form-control text-center mx-auto"
+                  style={{ width: "340px" }}
+                  value={form.actualCount}
+                  readOnly
+                />
+              </td>
+            </tr>
+
+            {/* 총액 */}
+            <tr>
+              <th className="bg-dark text-white text-center align-middle">
+                총액(원)
+              </th>
+              <td className="bg-light align-middle">
+                <input
+                  type="text"
+                  name="baseAmount"
+                  className="form-control text-center mx-auto"
+                  style={{ width: "340px" }}
+                  value={formatNumber(form.baseAmount)}
+                  readOnly
+                />
+              </td>
+            </tr>
+
+            {/* 할인금액 */}
+            <tr>
+              <th className="bg-dark text-white text-center align-middle">
+                할인금액(원)
+              </th>
+              <td className="bg-light align-middle">
+                <input
+                  type="text"
+                  name="discount"
+                  className="form-control text-center mx-auto"
+                  style={{ width: "340px" }}
+                  value={formatNumber(form.discount)}
+                  readOnly
+                />
+              </td>
+            </tr>
+
+            {/* 최종금액 */}
+            <tr>
+              <th className="bg-dark text-white text-center align-middle">
+                최종금액(원)
+              </th>
+              <td className="bg-light align-middle">
+                <input
+                  type="text"
+                  name="actualAmount"
+                  className="form-control text-center mx-auto"
+                  style={{ width: "340px" }}
+                  value={formatNumber(form.actualAmount)}
+                  readOnly
+                />
+              </td>
+            </tr>
 
             {/* 등록일 */}
             <tr>
@@ -232,6 +371,7 @@ function SalesServiceDetail() {
         </table>
       </form>
 
+      {/* 버튼 영역 */}
       <div
         className="d-flex justify-content-center align-items-center mt-4"
         style={{ gap: "20px" }}
