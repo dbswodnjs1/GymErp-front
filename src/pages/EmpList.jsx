@@ -5,6 +5,7 @@ import EmpDetail from "./EmpDetail.jsx";
 import EmpModal from "../components/EmpModal";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import "../components/css/EmpList.css";
+import "../styles/detail-pane.css";
 
 export default function EmpList() {
   // 목록/선택/모드 상태
@@ -176,7 +177,7 @@ export default function EmpList() {
       </div>
 
       {/* 오른쪽 패널 */}
-      <div className="flex-grow-1 p-4 overflow-auto detail-pane">
+      <div className="right-pane flex-grow-1 p-4 overflow-auto">
         {renderRight()}
       </div>
     </div>

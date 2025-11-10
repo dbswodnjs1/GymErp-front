@@ -50,8 +50,8 @@ function StockOutbound() {
     };
 
     return (
-        <div className="container mt-4"> 
-            <div className="row justify-content-center">
+        <div className="container d-flex align-items-center min-vh-100"> 
+            <div className="row justify-content-center w-100">
                 <div className="col-md-8 col-lg-6"> 
                     
                     <div className="mb-3 row align-items-center">

@@ -72,7 +72,7 @@ function AiMemberPredictionChart() {
     .sort((a, b) => a.month.localeCompare(b.month));
 
   return (
-    <ChartWrapper title="연말 회원수 예측 그래프">
+    <ChartWrapper title="AI 분석 그래프(연말 회원수 예측)">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={processedData}>
           <CartesianGrid strokeDasharray="3 3" />

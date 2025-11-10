@@ -6,10 +6,6 @@ import { FaSearch } from "react-icons/fa";
 import MemberSearchModal from "../../components/MemberSearchModal";
 import EmpSearchModal from "../../components/EmpSearchModal";
 
-
-// axios.defaults.baseURL = "";
-
-
 function SalesServiceList() {
   const [salesList, setSalesList] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);

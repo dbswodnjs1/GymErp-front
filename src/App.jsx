@@ -2,7 +2,7 @@
 import 'bootstrap/dist/css/bootstrap.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './App.css';
-
+import "./styles/detail-pane.css";
 import { useOutlet } from 'react-router-dom';
 import BsNavBar from './components/layout/BsNavBar';
 import BsSideBar from './components/layout/BsSideBar';

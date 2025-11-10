@@ -219,9 +219,10 @@ export default function MembersList() {
       </div>
 
       {/* 오른쪽 패널 */}
-      <div className="flex-grow-1 p-4 overflow-auto bg-white">
+      <div className="right-pane flex-grow-1 p-4 overflow-auto" > 
         {renderRight()}
       </div>
     </div>
   );
 }
+

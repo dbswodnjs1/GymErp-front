@@ -41,11 +41,21 @@ function AiSalesPredictionChart() {
   };
 
   const prevYearData = makeMonthlyData(prevYear, "TOTALAMOUNT");
-  const currentYearData = makeMonthlyData(currentYear, "TOTALAMOUNT");
+  let currentYearData = makeMonthlyData(currentYear, "TOTALAMOUNT");
   const nextYearPredicted = makeMonthlyData(nextYear, "PREDICTED_SALES");
 
+  // ✅ 올해 데이터는 "전 달까지"만 표시 (현재 달은 제외)
+  const thisMonth = new Date().getMonth() + 1; // 1~12
+  const lastMonth = thisMonth - 1 <= 0 ? 12 : thisMonth - 1; // 1월이면 12월로 보정
+  currentYearData = currentYearData.slice(0, lastMonth);
+
   const options = {
-    chart: { type: "line", backgroundColor: "transparent" },
+    chart: {
+      type: "line",
+      backgroundColor: "transparent",
+      spacingTop: 10,
+      spacingBottom: 30,
+    },
     title: {
       text: "",
       style: { fontSize: "16px", fontWeight: "bold" },
@@ -53,10 +63,12 @@ function AiSalesPredictionChart() {
     xAxis: {
       categories,
       labels: { style: { fontSize: "11px" } },
-      title: { text: null }, // ✅ 월별 제목 제거
+      title: { text: null },
     },
     yAxis: {
-      title: { text: null }, // ✅ 매출액 제목 제거
+      title: { text: null },
+      top: "0%",
+      height: "70%",
       labels: {
         formatter() {
           return this.value.toLocaleString();
@@ -75,22 +87,27 @@ function AiSalesPredictionChart() {
           .join("<br/>")}`;
       },
     },
-    legend: { align: "center", verticalAlign: "bottom" },
+    legend: {
+      align: "center",
+      verticalAlign: "bottom",
+      itemStyle: { fontSize: "12px" },
+      y: 10,
+    },
     series: [
       {
         name: `${prevYear}년 (작년 실제)`,
         data: prevYearData,
-        color: "#64B5F6",
+        color: "#8c8c8dff",
       },
       {
         name: `${currentYear}년 (올해 실제)`,
         data: currentYearData,
-        color: "#1976D2",
+        color: "#000a14ff",
       },
       {
         name: `${nextYear}년 (예측)`,
         data: nextYearPredicted,
-        color: "#fb4f00ff",
+        color: "#fb1100ff",
         dashStyle: "ShortDash",
       },
     ],

@@ -4,6 +4,7 @@ import { Alert, Button, Table, Badge } from "react-bootstrap";
 import axios from "axios";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./attendance.css";
+import Pagination from "../../components/Pagination";
 
 /*
  *  - 컨트롤러 base: /v1
@@ -24,7 +25,6 @@ const toLocalDate = (ymdStr) => {
   const [y, m, d] = ymdStr.split("-").map(Number);
   return new Date(y, m - 1, d, 0, 0, 0, 0);
 };
-
 
 
 const toYmd = (d) => {
@@ -125,14 +125,14 @@ export default function EmpAttendanceMy() {
     return candidates[0];
   }, [rows, myEmpNum, pageOffset, ymd]);
 
-  // ✅ 출근: 서버가 인증 사용자로 처리 → 바디 전송 없음
+  // 출근: 서버가 인증 사용자로 처리 → 바디 전송 없음
   const handleCheckIn = async () => {
     if (pageOffset !== 0) return;
     try {
       setLoading(true);
       setError("");
       await api.post(`/attendance`);
-      setMessage("출근 처리했습니다.");
+      setMessage("출근 완료");
       await fetchDaily();
     } catch (e) {
       console.error("checkIn error", e?.response || e);
@@ -151,7 +151,7 @@ export default function EmpAttendanceMy() {
       setLoading(true);
       setError("");
       await api.put(`/attendance/${attNum}/checkout`);
-      setMessage("퇴근 처리했습니다.");
+      setMessage("퇴근 완료");
       await fetchDaily();
     } catch (e) {
       console.error("checkOut error", e?.response || e);
@@ -162,25 +162,41 @@ export default function EmpAttendanceMy() {
   };
 
   // 화면용 가공 + 통계
-  const viewRows = useMemo(
-    () =>
-      rows
-        .map((r) => ({
-          ...r,
-          _name: r.empName || String(r.empNum ?? ""),
-          _start: r.checkIn ?? r.startedAt,
-          _end: r.checkOut ?? r.endedAt,
-          _dur: r.workHours ?? r.duration ?? r.durationS ?? r.durationSec,
-        }))
-        .sort((a, b) => {
-          const n = a._name.localeCompare(b._name, "ko");
-          if (n !== 0) return n;
-          const ta = parse(a._start)?.getTime() ?? 0;
-          const tb = parse(b._start)?.getTime() ?? 0;
-          return ta - tb;
-        }),
-    [rows]
-  );
+  // 화면용 가공 + 통계
+  const viewRows = useMemo(() => {
+    const timeVal = (s) => {
+      const d = parse(s);
+      return d ? d.getTime() : Number.MAX_SAFE_INTEGER; // 시간 없는 항목은 맨 아래
+    };
+
+    return (rows || [])
+      .map((r) => ({
+        ...r,
+        _name: r.empName || String(r.empNum ?? ""),
+        _start: r.checkIn ?? r.startedAt,
+        _end: r.checkOut ?? r.endedAt,
+        _dur: r.workHours ?? r.duration ?? r.durationS ?? r.durationSec,
+      }))
+      .sort((a, b) => {
+        const ta = timeVal(a._start);
+        const tb = timeVal(b._start);
+        if (ta !== tb) return tb - ta; // ⬅ 출근 시간 내림차순
+        return a._name.localeCompare(b._name, "ko"); // 보조 정렬: 이름
+      });
+  }, [rows]);
+
+//페이지 네이션 추가
+  /* ✅ viewRows 계산 이후에 페이지네이션 배치 */
+  const [page, setPage] = useState(1);
+  const pageSize = 20; // 페이지당 건수
+  const totalPage = Math.max(1, Math.ceil(viewRows.length / pageSize));
+  const pageRows = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return viewRows.slice(start, start + pageSize);
+  }, [viewRows, page, pageSize]);
+  useEffect(() => { setPage(1); }, [ymd, rows]);      // 날짜/데이터 바뀌면 1페이지
+  useEffect(() => { if (page > totalPage) setPage(totalPage); }, [totalPage, page]);
+
 
   const totalCount = viewRows.length;
   const workingCount = viewRows.filter((r) => !r._end).length;
@@ -274,7 +290,7 @@ export default function EmpAttendanceMy() {
             <button className={`page-link ${pageOffset === 0 ? "disabled" : ""}`} onClick={goToday}>오늘</button>
             <button className="page-link" onClick={() => setPageOffset((v) => v + 7)}>&raquo;</button>
 
-            {/* ⬇ 추가: 날짜 직접 선택 */}
+            {/* 추가: 날짜 직접 선택 */}
             <input
               type="date"
               className="form-control form-control-sm ms-2"
@@ -317,10 +333,10 @@ export default function EmpAttendanceMy() {
             </tr>
           </thead>
           <tbody>
-            {viewRows.length === 0 ? (
+            {pageRows.length === 0 ? (
               <tr><td colSpan={4} className="text-center text-muted py-4">데이터 없음</td></tr>
             ) : (
-              viewRows.map((r, idx) => {
+              pageRows.map((r, idx) => {
                 const key = r.attNum ?? r.id ?? `${r.empNum}-${r._start}-${r._end}-${idx}`;
                 const isMine = myEmpNum && r.empNum === myEmpNum;
                 return (
@@ -338,8 +354,14 @@ export default function EmpAttendanceMy() {
               })
             )}
           </tbody>
+
         </Table>
       </div>
+      <Pagination
+        page={page}
+        totalPage={totalPage}
+        onPageChange={setPage}
+      />
     </>
   );
 }

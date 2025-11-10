@@ -2,15 +2,15 @@
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 
-function CustomToolbar({ date, label, onNavigate, onView, isAdmin = false, onAdminTest }) {
+function CustomToolbar({ date, label, onNavigate, onView, isAdmin = false, onAdminTest, legendItems=[] }) {
 
   const monthLabel = format(date, "yyyy년 M월", {locale:ko});
 
   return (
-    <div className="mb-3">
+    <div className="mb-2">
 
       {/* 상단: 좌(이동) - 가운데(월/Today) - 우(뷰전환) */}
-      <div className="rbc-toolbar d-flex align-items-center justify-content-between gap-2 toolbar-wrap">
+      <div className="rbc-toolbar d-flex align-items-center justify-content-between gap-2 toolbar-wrap ">
 
         {/* 이동 버튼 그룹 */}
         <div className="btn-group">
@@ -24,17 +24,8 @@ function CustomToolbar({ date, label, onNavigate, onView, isAdmin = false, onAdm
           <div className="month-title">{monthLabel}</div>
         </div>
 
-        {/* 보기 전환 + (옵션) 관리자 버튼 */}
+        {/* 보기 전환*/}
         <div className="d-flex align-items-center">
-          {isAdmin && (
-            <button
-              className="btn btn-danger btn-sm me-2"
-              onClick={onAdminTest}
-              title="관리자만 보임(테스트)"
-            >
-              관리자 테스트
-            </button>
-          )}
           <div className="btn-group">
             <button className="btn btn-outline-secondary btn-sm" onClick={() => onView("month")}>Month</button>
             <button className="btn btn-outline-secondary btn-sm" onClick={() => onView("week")}>Week</button>
@@ -43,7 +34,19 @@ function CustomToolbar({ date, label, onNavigate, onView, isAdmin = false, onAdm
         </div>
       </div>
       
-      <hr className="my-3 toolbar-divider" />
+      <hr className="my-3 toolbar-divider" />    
+      
+      {/* 범례 */}
+      <div className="rbc-legend d-flex flex-wrap gap-3 ps-1 mt-2 ">
+        {legendItems.map(({ key, label, color }) => (
+          <div key={key} className="rbc-legend-item d-inline-flex align-items-center me-3 mb-1" title={label}>
+            <span className="rbc-legend-dot me-2" style={{ background: color }} />
+            <span className="rbc-legend-label small">{label}</span>
+          </div>
+        ))}
+      </div>
+
+     
 
     </div>
   );

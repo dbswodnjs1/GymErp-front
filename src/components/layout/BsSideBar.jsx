@@ -92,33 +92,25 @@ export default function BsSideBar() {
             <SubMenuItem to="/emp"           icon="table"           text="직원목록" />
             <SubMenuItem to="/schedule"      icon="calendar-event"  text="일정관리" />
             <SubMenuItem to="/attendance/my" icon="clock-history"   text="출퇴근관리" />
-          </DropdownMenu>
-
-          <DropdownMenu icon="people-fill" title="회원">
-            <SubMenuItem to="/member" icon="table" text="회원목록" />
-          </DropdownMenu>
-
-          <DropdownMenu icon="people-fill" title="상품관리">
-            <SubMenuItem to="/product" icon="cart-plus" text="상품목록" />
-            <SubMenuItem to="/stock" icon="cart-plus" text="재고현황" />
-          </DropdownMenu>           
+          </DropdownMenu>     
 
           {/* 회원 */}
           <DropdownMenu icon="person-lines-fill" title="회원">
             <SubMenuItem to="/member" icon="card-list" text="회원목록" />
           </DropdownMenu>
-
+  
           {/* 판매 */}
           <DropdownMenu icon="graph-up" title="판매">
             <SubMenuItem to="/sales/salesitemlist" icon="receipt" text="상품 판매내역" />
-            <SubMenuItem to="/sales/salesservicecreate" icon="cart" text="서비스 판매등록" />
+            <SubMenuItem to="/sales/salesitemcreate" icon="cart" text="상품 판매등록" />
             <SubMenuItem to="/sales/salesservicelist" icon="receipt" text="서비스 판매내역" />
+            <SubMenuItem to="/sales/salesservicecreate" icon="cart" text="서비스 판매등록" />
           </DropdownMenu>
 
           {/* 상품관리 */}
           <DropdownMenu icon="box-seam" title="상품관리">
             <SubMenuItem to="/product"        icon="box-seam" text="상품목록" />
-            <SubMenuItem to="/stock/inbound"  icon="boxes"    text="재고현황" />
+            <SubMenuItem to="/stock"  icon="boxes"    text="재고현황" />
           </DropdownMenu>
 
           {/* 게시판 */}

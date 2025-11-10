@@ -56,8 +56,8 @@ function StockInbound() {
   };
 
   return (
-        <div className="container mt-4"> {/* 1. 전체 컨테이너 및 상단 여백 */}
-            <div className="row justify-content-center">
+        <div className="container d-flex align-items-center min-vh-100"> {/* 1. 전체 컨테이너 및 상단 여백 */}
+            <div className="row justify-content-center w-100">
                 <div className="col-md-8 col-lg-6"> {/* 2. 컨텐츠 중앙 정렬 및 너비 제한 */}
                     
                     {/* 3. [선택된 상품] UI (와이어프레임 [3]번) */}

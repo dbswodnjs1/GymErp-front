@@ -1,7 +1,10 @@
-/* 오른쪽 상세 패널 배경 (연한 하늘색) */
-.detail-pane {
-  background-color: #eaf4ff;  /* 요청한 톤 */
-  min-height: calc(100vh - 120px); /* 페이지 레이아웃에 맞게 여백 조절(필요 시 값 조정) */
+/* 대시보드 glass 배경과 동일하게 */
+.detail-pane{
+  background: var(--glass-sidebar-bg);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
 }
 
 /* 상세 카드들은 흰색 유지 + 살짝 그림자 */

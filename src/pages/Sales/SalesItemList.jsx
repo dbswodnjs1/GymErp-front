@@ -1,5 +1,5 @@
 // src/pages/Sales/SalesItemList.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Pagination from '../../components/Pagination';
@@ -53,8 +53,11 @@ const fetchSalesData = async (filter) => {
 function SalesItemList() {
   const navigate = useNavigate();
 
+  const tableRef = useRef(null);
+
   const [salesList, setSalesList] = useState([]);
   const [totalPage, setTotalPage] = useState(1);
+  const [selectedRow, setSelectedRow] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // 검색/필터
@@ -78,7 +81,7 @@ function SalesItemList() {
     try {
       const { list, totalPage } = await fetchSalesData({
         page,
-        size: 10,
+        size: 20,
         keyword,
         ...filterDetails
       });
@@ -116,219 +119,261 @@ function SalesItemList() {
     navigate('/sales/salesitemcreate');
   };
 
+  const handleRowClick = (id) => setSelectedRow(Number(id));
+  const handleRowDoubleClick = (id) => navigate('/sales/salesitemdetail', { state: { itemId: id } });
+
   const goToDetail = (id) => {
     navigate('/sales/salesitemdetail', { state: { itemId: id } });
   };
 
   return (
-    <div className="container mt-4">
-      <h2 className="mb-4">상품 판매 내역 조회</h2>
+    <div
+      className="d-flex"
+      style={{
+        minHeight: '100vh',
+        width: '100%',
+        backgroundColor: '#f8f9fa',
+        overflowX: 'hidden',
+      }}
+    >
+      <main
+        className="flex-grow-1 d-flex justify-content-center"
+        style={{ padding: '40px 20px', boxSizing: 'border-box' }}
+      >
+        <div
+          className="content-wrapper"
+          style={{
+            width: '100%',
+            maxWidth: '1200px',
+            backgroundColor: '#fff',
+            borderRadius: '10px',
+            padding: '30px 40px',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+            boxSizing: 'border-box',
+          }}
+        >
+          <h2 className="border-bottom pb-2 mb-4 fw-bold">
+            상품 판매 내역 조회
+            <br />
+            <br />
+          </h2>
 
-      {/* 기준점 설정 */}
-      <div className="card-body position-relative">
-
-        <div className="row justify-content-center g-3 align-items-end">
-
-          <div className="col-md-3">
-            <label htmlFor="startDate" className="form-label">기간 선택</label>
-            <div className="input-group">
+          {/* 필터 바 (SalesServiceList.jsx 스타일 적용) */}
+          <div
+            className="d-flex align-items-center flex-nowrap justify-content-end"
+            style={{
+              gap: "16px",
+              overflowX: "auto",
+              whiteSpace: "nowrap",
+              width: "100%",
+            }}
+          >
+            {/* 기간 */}
+            <div className="d-flex align-items-center flex-shrink-0">
+              <span className="me-2 fw-semibold">기간</span>
               <input
                 type="date"
-                id="startDate"
                 className="form-control"
+                style={{ width: "140px" }}
                 value={filterDetails.startDate}
                 onChange={(e) =>
                   setFilterDetails((prev) => ({ ...prev, startDate: e.target.value }))
                 }
               />
-              <span className="input-group-text">~</span>
+              <span className="mx-2">~</span>
               <input
                 type="date"
-                id="endDate"
                 className="form-control"
+                style={{ width: "140px" }}
                 value={filterDetails.endDate}
                 onChange={(e) =>
                   setFilterDetails((prev) => ({ ...prev, endDate: e.target.value }))
                 }
               />
             </div>
-          </div>
 
-          {/* 직원 선택 */}
-          <div className="col-md-3">
-            <label className="form-label">
-              직원 <small className="text-muted">(사원번호: {filterDetails.empNum || "전체"})</small>
-            </label>
-            <div className="d-flex gap-2">
-              <button
-                className="btn btn-outline-secondary w-100"
-                onClick={() => setEmpModalOpen(true)}
-              >
-                <i className="bi bi-person-fill me-1" />
-                직원 선택
-              </button>
-              {filterDetails.empNum && (
-                <button
-                  className="btn btn-outline-danger"
-                  title="선택 해제"
-                  onClick={() => setFilterDetails(prev => ({ ...prev, empNum: '' }))}
-                >
-                  초기화
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* 서비스 선택 (테스트용) */}
-          <div className="col-md-4">
-            <label className="form-label">서비스 선택 (테스트)</label>
-            <div className="input-group">
+            {/* 직원 */}
+            <div className="d-flex align-items-center flex-shrink-0">
+              <span className="me-2 fw-semibold">직원</span>
               <input
                 type="text"
                 className="form-control"
-                placeholder="선택한 서비스명으로 상품명 검색에 채워집니다"
-                value={pickedService?.name || pickedService?.serviceName || ''}
+                style={{ width: "180px" }}
+                placeholder="선택된 직원"
+                value={filterDetails.empNum ? `사원번호: ${filterDetails.empNum}`: ''}
                 readOnly
+                onClick={() => setEmpModalOpen(true)}
               />
               <button
-                className="btn btn-outline-secondary"
-                onClick={() => setSvcModalOpen(true)}
-              >
-                서비스 선택
-              </button>
-              {pickedService && (
-                <button
-                  className="btn btn-outline-danger"
-                  title="선택 해제"
-                  onClick={() => { setPickedService(null); setKeyword(''); }}
+                  className="btn btn-sm btn-outline-secondary ms-2"
+                  onClick={() => setEmpModalOpen(true)}
                 >
-                  초기화
-                </button>
-              )}
+                  <i className="bi bi-search" />
+              </button>
             </div>
-          </div>
 
-          {/* 상품명 + 검색 버튼 */}
-          <div className="col-md-8 mt-2">
-            <label className="form-label">품목</label>
-            <div className="input-group">
+            {/* 품목 */}
+            <div className="d-flex align-items-center flex-shrink-0">
+              <span className="me-2 fw-semibold">품목</span>
               <input
                 type="text"
                 className="form-control"
+                style={{ width: "230px" }}
                 placeholder="상품명을 입력하세요"
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               />
-              <button
-                onClick={handleSearch}
-                disabled={isLoading}
-                className="btn btn-primary"
-              >
-                <i className="bi bi-search me-1" />
-                검색
-              </button>
             </div>
           </div>
-        </div>
 
-        {/* 🔘 떠 있는 초기화 버튼 (우측 상단 고정) */}
-        <button
-          onClick={handleReset}
-          disabled={isLoading}
-          className="btn btn-outline-secondary d-flex align-items-center position-absolute end-0"
-          style={{ top: 120, zIndex: 2 }}
-          title="필터 초기화"
-        >
-          <i className="bi bi-arrow-counterclockwise me-1" />
-          초기화
-        </button>
-
-      </div>
-
-      {/* 테이블 */}
-      <table className="table table-striped table-hover text-center align-middle mb-0">
-        <thead className="table-dark">
-          <tr>
-            <th>판매번호</th>
-            <th>판매 일시</th>
-            <th>구분</th>
-            <th>상품명</th>
-            <th>수량</th>
-            {/* ✅ 헤더 텍스트도 이메일로 변경 */}
-            <th>판매자 이메일</th>
-            <th>총액(단위:원)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {isLoading ? (
-            <tr />
-          ) : salesList.length > 0 ? (
-            salesList.map((item) => (
-              <tr
-                key={item.id}
-                onDoubleClick={() => goToDetail(item.id)}
-                style={{ cursor: 'pointer' }}
-                title="더블클릭하면 상세 페이지로 이동합니다"
+          {/* 초기화 버튼 (SalesServiceList.jsx 스타일 적용) */}
+          <div className="d-flex justify-content-end mt-4 mb-3">
+              <button
+                className="btn btn-outline-dark d-flex align-items-center"
+                style={{ height: "38px" }}
+                onClick={handleReset}
               >
-                <td className="text-primary fw-semibold">{item.id}</td>
-                <td>{item.salesAt ? new Date(item.salesAt).toLocaleString('ko-KR') : '-'}</td>
-                <td className="fw-bold text-primary">{item.category}</td>
-                <td className="text-start">{item.productName}</td>
-                <td>{Number(item.quantity ?? 0).toLocaleString()}</td>
-                {/* ✅ 이메일 표시 */}
-                <td>{item.empText}</td>
-                <td className="fw-bold">{Number(item.totalAmount ?? 0).toLocaleString()}원</td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="7" className="text-center p-4 text-muted">조회된 판매 내역이 없습니다.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+                <i className="bi bi-arrow-counterclockwise me-1" />
+                초기화
+              </button>
+          </div>
 
-      {/* 하단: 페이지네이션 + 등록 버튼 */}
-      <div className="position-relative mt-3">
-        <div className="d-flex justify-content-center">
-          <Pagination page={page} totalPage={totalPage} onPageChange={setPage} />
+          {/* 테이블 */}
+          <div
+            ref={tableRef}
+            style={{
+              maxHeight: "520px",
+              overflowY: "auto",
+              overflowX: "hidden",
+              border: "1px solid #dee2e6",
+              borderRadius: "6px",
+            }}
+          >
+            <table
+              className="table table-hover text-center align-middle mb-0"
+              style={{ tableLayout: "fixed", width: "100%" }}
+            >
+              <thead className="table-dark">
+                <tr>
+                  <th style={{ width: "10%" }}>판매번호</th>
+                  <th style={{ width: "15%" }}>판매 일시</th>
+                  <th style={{ width: "10%" }}>구분</th>
+                  <th style={{ width: "25%" }}>상품명</th>
+                  <th style={{ width: "10%" }}>수량</th>
+                  <th style={{ width: "20%" }}>판매자 이메일</th>
+                  <th style={{ width: "10%" }}>총액(원)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan="7" className="p-4 text-center">
+                      로딩중...
+                    </td>
+                  </tr>
+                ) : salesList.length > 0 ? (
+                  salesList.map((item) => {
+                    const formattedDate = item.salesAt
+                      ? new Date(item.salesAt).toLocaleString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false,
+                        })
+                      : '-';
+                    const isSelected = Number(selectedRow) === Number(item.id);
+
+                    return (
+                      <tr key={item.id}>
+                        <td colSpan="7" style={{ padding: 0 }}>
+                          <div
+                            onClick={() => handleRowClick(item.id)}
+                            onDoubleClick={() => handleRowDoubleClick(item.id)}
+                            className="d-flex text-center"
+                            style={{
+                              cursor: "pointer",
+                              backgroundColor: isSelected
+                                ? "#d9ffae"
+                                : "transparent",
+                              transition: "background-color 0.2s ease-in-out",
+                              padding: "8px 0",
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isSelected)
+                                e.currentTarget.style.backgroundColor =
+                                  "#f5f6f7";
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isSelected)
+                                e.currentTarget.style.backgroundColor =
+                                  "transparent";
+                            }}
+                          >
+                            <div style={{ width: "10%" }}>{item.id}</div>
+                            <div style={{ width: "15%" }}>{formattedDate}</div>
+                            <div style={{ width: "10%" }}>{item.category}</div>
+                            <div style={{ width: "25%" }}>{item.productName}</div>
+                            <div style={{ width: "10%" }}>{Number(item.quantity ?? 0).toLocaleString()}</div>
+                            <div style={{ width: "20%" }}>{item.empText}</div>
+                            <div style={{ width: "10%" }}>{Number(item.totalAmount ?? 0).toLocaleString()}</div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="text-center p-4 text-muted">조회된 판매 내역이 없습니다.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* 하단: 페이지네이션 + 등록 버튼 */}
+          <div className="d-flex justify-content-between align-items-center mt-4">
+            <div className="flex-grow-1 d-flex justify-content-center">
+              <Pagination page={page} totalPage={totalPage} onPageChange={setPage} />
+            </div>
+            <button
+              onClick={handleGoToCreate}
+              className="btn btn-success d-flex align-items-center ms-3"
+            >
+              <i className="bi bi-journal-plus me-2" />
+              판매 등록
+            </button>
+          </div>
+
+          {/* 직원 선택 모달 */}
+          <EmpSearchModal
+            show={empModalOpen}
+            onHide={() => setEmpModalOpen(false)}
+            onExited={() => { }}
+            onConfirm={(picked) => {
+              setFilterDetails(prev => ({ ...prev, empNum: picked.empNum }));
+              setPage(1);
+            }}
+            multi={false}
+          />
+
+          {/* 서비스 선택/검색 모달 (테스트용) */}
+          <SalesServiceSearchModal
+            show={svcModalOpen}
+            onHide={() => setSvcModalOpen(false)}
+            onExited={() => { }}
+            onSelect={(svc) => {
+              const name = svc.name || svc.serviceName || '';
+              setPickedService(svc);
+              setKeyword(name);
+              setPage(1);
+              setSvcModalOpen(false);
+            }}
+          />
         </div>
-
-        <button
-          onClick={handleGoToCreate}
-          className="btn btn-success position-absolute end-0 top-50 translate-middle-y"
-        >
-          <i className="bi bi-journal-plus me-1" />
-          등록
-        </button>
-      </div>
-
-      {/* 직원 선택 모달 */}
-      <EmpSearchModal
-        show={empModalOpen}
-        onHide={() => setEmpModalOpen(false)}
-        onExited={() => { }}
-        onConfirm={(picked) => {
-          setFilterDetails(prev => ({ ...prev, empNum: picked.empNum }));
-          setPage(1);
-        }}
-        multi={false}
-      />
-
-      {/* 서비스 선택/검색 모달 (테스트용) */}
-      <SalesServiceSearchModal
-        show={svcModalOpen}
-        onHide={() => setSvcModalOpen(false)}
-        onExited={() => { }}
-        onSelect={(svc) => {
-          const name = svc.name || svc.serviceName || '';
-          setPickedService(svc);
-          setKeyword(name);
-          setPage(1);
-          setSvcModalOpen(false);
-        }}
-      />
+      </main>
     </div>
   );
 }

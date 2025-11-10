@@ -25,7 +25,7 @@ function Login() {
         setLoading(true);
 
         try {
-            // api 서버에 로그인 요청 보내기
+            // api 서버에 로그인 요청 보내기\
             const response = await api.post("/v1/emp/login",
                 {
                     empEmail : empEmail,

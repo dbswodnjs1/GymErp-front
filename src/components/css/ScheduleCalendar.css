@@ -122,6 +122,7 @@
   overflow: hidden;
 }
 
+
 /* 이번 달이 아닌 칸 배경을 더 옅은 회색으로 (월 뷰) */
 .rbc-month-view .rbc-day-bg.rbc-off-range-bg {
   background: #e6e6e7 !important;   /* ← 원하는 만큼 더 밝게: #fafbfd, #f8fafc 등 */
@@ -144,5 +145,6 @@
 .rbc-month-view .rbc-row .rbc-date-cell.rbc-off-range:nth-child(7) .rbc-button-link {
   color: #a7a7a7 !important; /* 연한 파랑 */
 }
+
 
 

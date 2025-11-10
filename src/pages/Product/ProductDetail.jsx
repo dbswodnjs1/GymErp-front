@@ -102,6 +102,7 @@ function ProductDetail(props) {
                     // 서비스인지 실물인지에 따라 productType 설정
                     productType: normalizedType,
                     categoryLabel,
+                    profileImage:data.profileImage,
                     productName: data.name ?? "",
                     salePrice:
                         typeof data.price === "number" // 가격이 숫자형이면 천단위 콤마 추가 
@@ -158,89 +159,121 @@ function ProductDetail(props) {
         <div className="row justify-content-center">
             <div className="card col-md-8 col-lg-6">
                 <div className="card-body">
-                    {/* 탭은 readonly 표시 */}
-                    <TabSwitcher
-                        tabs={PRODUCT_OR_SERVICE}
-                        activeValue={values.productType}
-                        onChange={() => { }}
-                        disabled
-                    />
-
-                    <TextField
-                        label="상품 구분"
-                        name="categoryLabel"
-                        value={values.categoryLabel}
-                        onChange={() => { }}
-                        readOnly
-                    />
+                    <h4 className="fw-bold mb-4">상품 상세 정보</h4>
+                    <div className="d-flex justify-content-between align-items-start mb-3">
+                        {/* 탭은 readonly 표시 */}
+                        <TabSwitcher
+                            tabs={PRODUCT_OR_SERVICE}
+                            activeValue={values.productType}
+                            onChange={() => { }}
+                            disabled
+                            buttonClassName="btn btn-outline-secondary"
+                            activeButtonClassName="btn btn-secondary"
+                            className="btn-group w-50"
+                        />
+                        <div className="ms-3">
+                            {values.productType=="PRODUCT"&&<>
+                                {values.profileImage?
+                                    <img src={`/upload/${values.profileImage}`} alt="프로필 이미지" 
+                                        className="rounded border"
+                                        style={{width:"100px",height:"100px",objectFit:"cover"}}/>
+                                    :
+                                    <i className="bi bi-folder-plus" style={{fontSize:"100px"}}></i>
+                                }
+                            </>}
+                        </div>
+                    </div>
+                    <div className="mb-3">
+                        <TextField
+                            label="상품 구분"
+                            name="categoryLabel"
+                            value={values.categoryLabel}
+                            onChange={() => { }}
+                            readOnly
+                        />
+                    </div>
 
                     {/* 재고 이름 */}
-                    <TextField
-                        label={values.productType === "PRODUCT" ? "상품명" : "서비스명"}
-                        name="productName"
-                        value={values.productName}
-                        onChange={() => { }}
-                        readOnly
-                    />
+                    <div className="mb-3">
+                        <TextField
+                            label={values.productType === "PRODUCT" ? "상품명" : "서비스명"}
+                            name="productName"
+                            value={values.productName}
+                            onChange={() => { }}
+                            readOnly
+                        />
+                    </div>
 
-                    <TextField
-                        label="판매 가격"
-                        name="salePrice"
-                        value={values.salePrice}
-                        onChange={() => { }}
-                        readOnly
-                    />
+                    <div className="mb-3">
+                        <TextField
+                            label="판매 가격"
+                            name="salePrice"
+                            value={values.salePrice}
+                            onChange={() => { }}
+                            readOnly
+                        />
+                    </div>
 
-                    <TextField
-                        label={values.quantityLabel}
-                        name="quantityInfo"
-                        value={values.quantityInfo}
-                        onChange={() => { }}
-                        readOnly
-                    />
+                    <div className="mb-3">
+                        <TextField
+                            label={values.quantityLabel}
+                            name="quantityInfo"
+                            value={values.quantityInfo}
+                            onChange={() => { }}
+                            readOnly
+                        />
+                    </div>
 
                     {/* Active 상태를 옵션값으로 나타냄. */}
-                    <BinaryRadioGroup
-                        label="판매 상태"
-                        name="saleStatus"
-                        value={values.saleStatus}
-                        onChange={() => { }}
-                        disabled
-                        options={[
-                            { value: "ACTIVE", label: "판매중" },
-                            { value: "INACTIVE", label: "판매중지" },
-                        ]}
-                    />
+                    <div className="mb-3">
+                        <BinaryRadioGroup
+                            label="판매 상태"
+                            name="saleStatus"
+                            value={values.saleStatus}
+                            onChange={() => { }}
+                            disabled
+                            options={[
+                                { value: "ACTIVE", label: "판매중" },
+                                { value: "INACTIVE", label: "판매중지" },
+                            ]}
+                        />
+                    </div>
 
-                    <TextField
-                        label="메모"
-                        name="memo"
-                        value={values.memo}
-                        onChange={() => { }}
-                        readOnly
-                    />
+                    <div className="mb-3">
+                        <TextField
+                            label="메모"
+                            name="memo"
+                            value={values.memo}
+                            onChange={() => { }}
+                            readOnly
+                        />
+                    </div>
 
-                    <TextField
-                        label="등록일"
-                        name="createdAt"
-                        value={values.createdAt}
-                        onChange={() => { }}
-                        readOnly
-                    />
+                    <div className="mb-3">
+                        <TextField
+                            label="등록일"
+                            name="createdAt"
+                            value={values.createdAt}
+                            onChange={() => { }}
+                            readOnly
+                        />
+                    </div>
 
-                    <TextField
-                        label="최종 수정일"
-                        name="updatedAt"
-                        value={values.updatedAt}
-                        onChange={() => { }}
-                        readOnly
-                    />
-                    <div className="d-flex gap-2 mt-4">
+                    <div className="mb-3">
+                        <TextField
+                            label="최종 수정일"
+                            name="updatedAt"
+                            value={values.updatedAt}
+                            onChange={() => { }}
+                            readOnly
+                        />
+                    </div>
+                    <div className="d-flex justify-content-end gap-2 mt-4">
                         <button type="button" className="btn btn-outline-secondary" onClick={() => navigate(backToList)}>
                             목록으로
                         </button>
                         <button type="button" className="btn btn-primary" onClick={handleEdit}>
-                            수정하기
+                            수정
                         </button>
                     </div>
                 </div>

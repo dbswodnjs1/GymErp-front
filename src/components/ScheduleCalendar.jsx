@@ -60,6 +60,7 @@ function ScheduleCalendar({
   onSelectEvent, // 부모에서 핸들러 넘기면 사용
   isAdmin = false,
   focusDate,
+  legendItems=[]
 }) {
   const [currentView, setCurrentView] = useState("month");
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -77,6 +78,7 @@ function ScheduleCalendar({
       setCurrentDate(focusDate);
     }
   }, [focusDate]);
+
 
   // ✅ 현재 달력의 연도 기준 공휴일 로드
   const currentYear = useMemo(() => currentDate.getFullYear(), [currentDate]);
@@ -235,6 +237,7 @@ function ScheduleCalendar({
         onExited={() => {}}
       />
     </>
+
   );
 }
 
