@@ -135,7 +135,7 @@
 
 /* 월 뷰: 토요일 날짜 숫자 색 */
 .rbc-month-view .rbc-row .rbc-date-cell:nth-child(7) .rbc-button-link {
-  color: #1c7ed6 !important; /* 원하는 색으로 */
+  color: #e03131 !important /* 원하는 색으로 */
 }
 
 /* 오프레인지 + 주말일 때도 색감 유지 */
