@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaUserCircle, FaEdit, FaTrashAlt, FaSave, FaTimes, FaFolderOpen } from "react-icons/fa";
+import "../../components/css/detail-pane.css";
+
 
 function MemberDetail() {
   const { memNum } = useParams();

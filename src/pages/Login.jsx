@@ -1,11 +1,11 @@
 // src/pages/Login.jsx
 import '../components/css/login.css';
 import api from "../api/axiosConfig.js";
-
-import axios from 'axios';
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
+import '/src/components/css/HeartbeatLogo.css';   // ✅ 절대경로
+import HeartbeatLogo from '../components/layout/HeartbeatLogo';
 
 function Login() {
   const [empEmail, setEmpEmail] = useState("");
@@ -51,7 +51,7 @@ function Login() {
         <div className="text-center mb-4">
           {/* ⬇ 아이콘을 Navbar 톤(—bs-dark)으로 통일 */}
           <div className="mb-3">
-            <i className="bi bi-activity" style={{ fontSize: "3rem", color: "var(--bs-dark)" }}></i>
+             <HeartbeatLogo stroke="#0a0f1f" /> 
           </div>
           <h2 className="card-title fw-bold mb-2">GYM ERP</h2>
           <p className="text-muted">관리 시스템</p>

@@ -148,3 +148,9 @@
 
 
 
+
+/* 라운딩/여백(선택) */
+.jb-cal .rbc-month-view .rbc-header {
+  padding: 8px 0;
+}
+

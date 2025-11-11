@@ -16,3 +16,17 @@
 
 /* src/App.css */
 body { margin: 0; }
+
+.table-row-clickable {
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.table-row-clickable:hover {
+  background-color: #fff3e0; /* hover 시 은은한 오렌지 톤 */
+}
+
+.table-row-selected {
+  background-color: #ffb74d !important; /* 선택된 상품 행을 또렷한 오렌지로 강조 */
+  color: #212529;
+}

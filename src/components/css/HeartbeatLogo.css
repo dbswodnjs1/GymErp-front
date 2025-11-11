@@ -1,0 +1,46 @@
+/* src/css/HeartbeatLogo.css */
+.hb { display:inline-block; overflow:visible; }
+
+/* 선이 그려지는 효과 + 글로우 강약 */
+.hb-path{
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation:
+    hb-draw var(--hb-speed,1.6s) ease-in-out infinite,
+    hb-glow var(--hb-speed,1.6s) ease-in-out infinite;
+}
+
+/* 위/아래 펌핑 */
+.hb-pulse{
+  animation: hb-pulse var(--hb-speed,1.6s) cubic-bezier(.2,.7,.2,1) infinite;
+  transform-origin: 50% 55%;
+}
+
+@keyframes hb-draw{
+  0%   { stroke-dashoffset: 100; }
+  42%  { stroke-dashoffset: 0;   }
+  100% { stroke-dashoffset: -18; }
+}
+
+/* 1) 펌핑 진폭/스케일 축소 */
+@keyframes hb-pulse{
+  0%,28%  { transform: translateY(0) scaleY(1); }
+  36%     { transform: translateY(calc(-0.6 * var(--hb-amp,10px))) scaleY(1.12); } /* 1.35 → 1.12 */
+  46%     { transform: translateY(calc( 0.6 * var(--hb-amp,10px))) scaleY(0.96); } /* 0.88 → 0.96 */
+  60%     { transform: translateY(0) scaleY(1); }
+  100%    { transform: translateY(0) scaleY(1); }
+}
+
+/* 2) 글로우도 살짝 줄이기 */
+@keyframes hb-glow{
+  0%,30%  { opacity: calc(var(--hb-glow-opacity, .55) - .15); }
+  42%     { opacity: var(--hb-glow-opacity, .55); }
+  60%,100%{ opacity: calc(var(--hb-glow-opacity, .55) - .1); }
+}
+
+
+/* 접근성: 모션 줄이기 */
+@media (prefers-reduced-motion: reduce){
+  .hb-path, .hb-pulse { animation: none !important; }
+  .hb-path { stroke-dashoffset: 0; }
+}

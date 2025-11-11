@@ -20,6 +20,7 @@
     "highcharts": "^12.4.0",
     "highcharts-react-official": "^3.2.3",
     "icons": "^1.0.0",
+    "lottie-react": "^2.4.1",
     "react": "^19.1.1",
     "react-apexcharts": "^1.8.0",
     "react-big-calendar": "^1.19.4",

@@ -155,7 +155,7 @@ function ProductDetail(props) {
         navigate(`/product/edit/${editType}/${targetId}`);
     };
 
-    return (
+    return (<div className='pt-5 pb-5' style={{backgroundColor: "#f8f9fa"}}>
         <div className="row justify-content-center">
             <div className="card col-md-8 col-lg-6">
                 <div className="card-body">
@@ -279,7 +279,7 @@ function ProductDetail(props) {
                 </div>
             </div>
         </div>
-    );
+    </div>);
 }
 
 export default ProductDetail;

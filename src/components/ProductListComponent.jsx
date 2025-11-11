@@ -2,6 +2,7 @@ import React from 'react';
 import Pagination from './Pagination';
 
 
+function ProductListComponent({ pageInfo, onPageChange, onToggleChange, columns, onRowClick, onSort, sortConfig, selectedRowId }) {
 function ProductListComponent({ pageInfo, onPageChange, onToggleChange, columns, onRowClick, onSort, sortConfig, loading }) {
 
     const getSortIcon = (key) => {
@@ -91,5 +92,6 @@ function ProductListComponent({ pageInfo, onPageChange, onToggleChange, columns,
         </>
     );
 }
+}
 
-export default ProductListComponent;
+export default ProductListComponent;       

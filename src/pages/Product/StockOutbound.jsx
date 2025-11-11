@@ -49,34 +49,37 @@ function StockOutbound() {
             });
     };
 
-    return (
+    return (<div className='pt-5 pb-5' style={{backgroundColor: "#f8f9fa"}}>
         <div className="container d-flex align-items-center min-vh-100"> 
             <div className="row justify-content-center w-100">
                 <div className="col-md-8 col-lg-6"> 
                     
-                    <div className="mb-3 row align-items-center">
-                        <label htmlFor="name" className="col-sm-3 col-form-label text-md-end">
-                            <strong>선택된 상품</strong>
-                        </label>
-                        <div className="col-sm-9 d-flex gap-2">
-                            <input 
-                                type="text" 
-                                value={state.codeBName || ''} 
-                                className="form-control" 
-                                readOnly 
-                            />
-                            <input 
-                                type="text" 
-                                value={state.name || ''} 
-                                id='name' 
-                                className="form-control" 
-                                readOnly 
-                            />
-                        </div>
-                    </div>
+                    
 
                     {/* 4. 메인 폼 (와이어프레임 [1]번, [2]번) */}
                     <div className="card shadow-sm border-0">
+
+                        <div className="mb-3 row align-items-center mt-3 me-3 ms-2">
+                            <label htmlFor="name" className="col-sm-3 col-form-label text-md-end">
+                                <strong>선택된 상품</strong>
+                            </label>
+                            <div className="col-sm-9 d-flex gap-2">
+                                <input 
+                                    type="text" 
+                                    value={state.codeBName || ''} 
+                                    className="form-control" 
+                                    readOnly 
+                                />
+                                <input 
+                                    type="text" 
+                                    value={state.name || ''} 
+                                    id='name' 
+                                    className="form-control" 
+                                    readOnly 
+                                />
+                            </div>
+                        </div>
+
                         <div className="card-body p-4">
                             <form onSubmit={handleSubmit}>
                                 
@@ -151,7 +154,7 @@ function StockOutbound() {
                 </div>
             </div>
         </div>
-    );
+    </div>);
 }
 
 export default StockOutbound;
