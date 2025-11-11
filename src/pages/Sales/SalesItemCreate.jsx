@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import SalesItemSearchModal from "../../components/SalesItemSearchModal";
+import { FaSearch } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
@@ -53,7 +54,7 @@ function SalesItemCreate() {
 
     try {
       // ✅ 엔드포인트 확인: /v1/sales/products
-      await axios.post("http://localhost:9000/v1/sales/products", salesItemData);
+      await axios.post("/v1/sales/products", salesItemData);
 
       alert("판매 내역이 성공적으로 등록되었습니다.");
       navigate("/sales/salesitemlist"); // 등록 후 목록으로 이동
@@ -110,90 +111,125 @@ function SalesItemCreate() {
   };
 
   return (
-    <div className="container mt-5" style={{ maxWidth: 700 }}>
-      <h4 className="fw-bold mb-5 text-start">상품 판매 등록</h4>
+    <div
+      className="d-flex justify-content-center align-items-start"
+      style={{
+        minHeight: "100vh",
+        width: "100%",
+        backgroundColor: "#f8f9fa",
+        overflowX: "hidden",
+        paddingTop: "60px",
+      }}
+    >
+      <div
+        style={{
+          width: "1200px",
+          zoom: "1.15",
+          transformOrigin: "top center",
+          overflow: "visible",
+        }}
+      >
+        <div
+          className="container"
+          style={{
+            maxWidth: "900px",
+            overflow: "visible",
+          }}
+        >
+          <h4 className="fw-bold mb-5 text-center">상품 판매 등록</h4>
 
-      <form onSubmit={handleSubmit} className="border rounded-4 shadow-sm overflow-hidden mt-4">
-        <table className="table table-striped m-0 align-middle text-center">
-          <tbody>
-            {/* 상품명: 입력칸 클릭 시 모달 오픈 (MemberList와 동일 패턴) */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle" style={{ width: "30%" }}>
-                상품명
-              </th>
-              <td className="bg-light align-middle position-relative">
-                <div className="d-flex justify-content-center" style={{ width: 340, margin: "0 auto" }}>
-                  <input
-                    type="text"
-                    className="form-control text-center"
-                    placeholder="상품 선택"
-                    value={form.productName}
-                    readOnly
-                    onClick={openProductModal}               // ✅ 입력칸 클릭 → 모달 열기
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary position-absolute"
-                    style={{ right: "calc(50% - 170px - 45px)", height: 38 }}
-                    onClick={openProductModal}               // ✅ 돋보기 버튼 → 모달 열기
-                  >
-                    <i className="bi bi-search" />
-                  </button>
-                </div>
-              </td>
-            </tr>
+          <form
+            onSubmit={handleSubmit}
+            className="border rounded-4 shadow-sm overflow-hidden mt-4 bg-white"
+            style={{
+              overflow: "visible",
+            }}
+          >
+            <table
+              className="table table-striped m-0 align-middle text-center"
+              style={{
+                overflow: "visible",
+              }}
+            >
+              <tbody>
+                <tr>
+                  <th className="bg-dark text-white text-center align-middle" style={{ width: "30%" }}>
+                    상품명
+                  </th>
+                  <td className="bg-light align-middle position-relative">
+                    <div className="d-flex justify-content-center" style={{ width: 340, margin: "0 auto" }}>
+                      <input
+                        type="text"
+                        className="form-control text-center"
+                        placeholder="상품 선택"
+                        value={form.productName}
+                        readOnly
+                        onClick={openProductModal}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary position-absolute"
+                        style={{ right: "calc(50% - 170px - 45px)", height: 38 }}
+                        onClick={openProductModal}
+                      >
+                        <FaSearch />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
 
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">구분</th>
-              <td className="bg-light align-middle">
-                <input className="form-control text-center mx-auto" style={{ width: 340 }} value={form.productType} readOnly />
-              </td>
-            </tr>
+                <tr>
+                  <th className="bg-dark text-white text-center align-middle">구분</th>
+                  <td className="bg-light align-middle">
+                    <input className="form-control text-center mx-auto" style={{ width: 340 }} value={form.productType} readOnly />
+                  </td>
+                </tr>
 
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">판매 수량</th>
-              <td className="bg-light align-middle">
-                <input
-                  type="number"
-                  min="1"
-                  step="1"
-                  className="form-control text-center mx-auto"
-                  style={{ width: 340 }}
-                  value={form.quantity}
-                  onChange={handleQuantityChange}
-                />
-              </td>
-            </tr>
+                <tr>
+                  <th className="bg-dark text-white text-center align-middle">판매 수량</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      className="form-control text-center mx-auto"
+                      style={{ width: 340 }}
+                      value={form.quantity}
+                      onChange={handleQuantityChange}
+                    />
+                  </td>
+                </tr>
 
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">단가 (원)</th>
-              <td className="bg-light align-middle">
-                <input className="form-control text-center mx-auto" style={{ width: 340 }} value={fmt(form.unitPrice)} readOnly />
-              </td>
-            </tr>
+                <tr>
+                  <th className="bg-dark text-white text-center align-middle">단가 (원)</th>
+                  <td className="bg-light align-middle">
+                    <input className="form-control text-center mx-auto" style={{ width: 340 }} value={fmt(form.unitPrice)} readOnly />
+                  </td>
+                </tr>
 
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">총액 (원)</th>
-              <td className="bg-light align-middle">
-                <input className="form-control text-center mx-auto" style={{ width: 340 }} value={fmt(form.actualAmount)} readOnly />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                <tr>
+                  <th className="bg-dark text-white text-center align-middle">총액 (원)</th>
+                  <td className="bg-light align-middle">
+                    <input className="form-control text-center mx-auto" style={{ width: 340 }} value={fmt(form.actualAmount)} readOnly />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
 
-        <div className="text-center p-3 bg-white border-top">
-          <button type="submit" className="btn btn-success px-5">
-            등록
-          </button>
+            <div className="text-center p-3 bg-white border-top">
+              <button type="submit" className="btn btn-success px-5">
+                등록
+              </button>
+            </div>
+          </form>
+
+          <SalesItemSearchModal
+            show={isProductModalOpen}
+            onHide={closeProductModal}
+            onSelect={handleSelectProduct}
+          />
         </div>
-      </form>
-
-      {/* ✅ MemberList → MemberModal 과 같은 호출 방식 */}
-      <SalesItemSearchModal
-        show={isProductModalOpen}
-        onHide={closeProductModal}         // MemberModal의 onClose와 동일
-        onSelect={handleSelectProduct}      // 선택 결과를 부모로 전달
-      />
+      </div>
     </div>
   );
 }

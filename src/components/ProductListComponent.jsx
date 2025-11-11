@@ -2,8 +2,7 @@ import React from 'react';
 import Pagination from './Pagination';
 
 
-function ProductListComponent({ pageInfo, onPageChange, onToggleChange, columns, onRowClick, onSort, sortConfig, selectedRowId }) {
-function ProductListComponent({ pageInfo, onPageChange, onToggleChange, columns, onRowClick, onSort, sortConfig, loading }) {
+function ProductListComponent({ pageInfo, onPageChange, onToggleChange, columns, onRowClick, onSort, sortConfig, selectedRowId, loading }) {
 
     const getSortIcon = (key) => {
         if (!sortConfig || sortConfig.key !== key) return null; // ' ▲▼' (회색 아이콘)
@@ -91,7 +90,6 @@ function ProductListComponent({ pageInfo, onPageChange, onToggleChange, columns,
             />
         </>
     );
-}
 }
 
 export default ProductListComponent;       

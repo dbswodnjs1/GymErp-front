@@ -5,9 +5,7 @@ import axios from 'axios';
 import Pagination from '../../components/Pagination';
 import EmpSearchModal from '../../components/EmpSearchModal';
 import SalesServiceSearchModal from '../../components/SalesServiceSearchModal';
-
-const API_BASE = 'http://localhost:9000';
-const LIST_API = `${API_BASE}/v1/sales/products`;
+const LIST_API = "/v1/sales/products";
 
 // empEmail을 목록 표시용으로 사용
 const normalizeRow = (row, fallbackIndex) => {

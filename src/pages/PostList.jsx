@@ -36,7 +36,7 @@ export default function PostList() {
 
     setLoading(true);
     axios
-      .get("http://localhost:9000/v1/post")
+      .get("/v1/post")
       .then((res) => {
         const list = Array.isArray(res.data) ? res.data.map(norm) : [];
         setRows(list);

@@ -126,8 +126,8 @@ export default function SchedulePage() {
   const loadSchedules = useCallback(async () => {
     try {
       const url = empNum
-        ? `http://localhost:9000/v1/schedule/emp/${empNum}`
-        : "http://localhost:9000/v1/schedule/all";
+        ? `/v1/schedule/emp/${empNum}`
+        : "/v1/schedule/all";
       const { data } = await axios.get(url);
       setEvents(mapToEvents(data || []));
     } catch (err) {
@@ -150,7 +150,8 @@ export default function SchedulePage() {
     if (kw) params.keyword = kw;
     if (codeBid) params.codeBid = codeBid;
 
-    const { data } = await axios.get(`http://localhost:9000/v1/schedules/search`, { params });
+
+    const { data } = await axios.get(`/v1/schedules/search`, { params });
 
     const list = data?.list || [];
     const mapped = mapToEvents(list);
@@ -213,7 +214,8 @@ export default function SchedulePage() {
     if (!window.confirm("정말 이 일정을 삭제하시겠습니까?")) return;
 
     try {
-      await axios.delete(`http://localhost:9000/v1/schedule/delete/${shNum}`);
+
+      await axios.delete(`/v1/schedule/delete/${shNum}`);
       alert("일정이 삭제되었습니다.");
       await loadSchedules();
     } catch (err) {

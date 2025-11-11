@@ -3,8 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal, Button, Table, Form, InputGroup } from "react-bootstrap";
 import axios from "axios";
 
-const API_BASE = "http://localhost:9000";
-const LIST_API = `${API_BASE}/v1/modals/products`;
+const LIST_API = "/v1/modals/products";
 
 function SalesItemSearchModal({ show, onHide, onSelect, onExited }) {
   const [list, setList] = useState([]);

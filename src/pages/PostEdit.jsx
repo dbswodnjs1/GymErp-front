@@ -54,7 +54,7 @@ export default function PostEdit() {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:9000/v1/post/${postId}`, { params: { inc: false } })
+      .get(`/v1/post/${postId}`, { params: { inc: false } })
       .then((res) => {
         const v = res.data ?? {};
         const next = {
@@ -108,7 +108,7 @@ export default function PostEdit() {
     if (!form.postContent?.trim()) return toast("내용을 입력하세요.", "danger");
     try {
       setSaving(true);
-      await axios.put(`http://localhost:9000/v1/post/${postId}`, form);
+      await axios.put(`/v1/post/${postId}`, form);
 
       // ✅ 세션/타이머 없이: 성공 모달 띄우고, 사용자 확인 시 이동
       setSuccess({

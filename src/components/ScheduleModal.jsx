@@ -409,7 +409,7 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate, readOnly = fa
     }
 
     axios
-      .get("http://localhost:9000/v1/member")
+      .get("/v1/member")
       .then((res) => setMembers(sortByKoName(res.data)))
       .catch((err) => console.error("회원 목록 불러오기 실패:", err));
   }, [empNum, empName, editData, selectedDate]);
@@ -496,10 +496,10 @@ function PTTab({ empNum, empName, onSaved, editData, selectedDate, readOnly = fa
 
     try {
       if (editData) {
-        await axios.put("http://localhost:9000/v1/schedule/update", payload);
+        await axios.put("/v1/schedule/update", payload);
         alert("PT 일정이 수정되었습니다.");
       } else {
-        await axios.post("http://localhost:9000/v1/schedule/add", payload);
+        await axios.post("/v1/schedule/add", payload);
         alert("PT 일정이 등록되었습니다.");
       }
       setErrors([]);
@@ -640,10 +640,10 @@ function VacationTab({ empNum, empName, onSaved, editData, selectedDate, readOnl
     try {
       setSaving(true);
       if (editData && editData.codeBid === "VACATION") {
-        await axios.put("http://localhost:9000/v1/schedule/update", payload);
+        await axios.put("/v1/schedule/update", payload);
         alert("휴가 일정이 수정되었습니다.");
       } else {
-        await axios.post("http://localhost:9000/v1/schedule/add", payload);
+        await axios.post("/v1/schedule/add", payload);
         alert("휴가 일정이 등록되었습니다.");
       }
       onSaved?.(payload);
@@ -728,7 +728,7 @@ function EtcTab({ empNum, empName, onSaved, editData, selectedDate, readOnly = f
     }
 
     axios
-      .get("http://localhost:9000/v1/schedule-types")
+      .get("/v1/schedule-types")
       .then((res) => {
         const nameMap = { "ETC-COMPETITION": "대회", "ETC-COUNSEL": "상담", "ETC-MEETING": "회의" };
         const etc = res.data
@@ -756,10 +756,10 @@ function EtcTab({ empNum, empName, onSaved, editData, selectedDate, readOnly = f
 
     try {
       if (editData && editData.codeBid?.startsWith("ETC")) {
-        await axios.put("http://localhost:9000/v1/schedule/update", payload);
+        await axios.put("/v1/schedule/update", payload);
         alert("기타 일정이 수정되었습니다.");
       } else {
-        await axios.post("http://localhost:9000/v1/schedule/add", payload);
+        await axios.post("/v1/schedule/add", payload);
         alert("기타 일정이 등록되었습니다.");
       }
       setErrors([]);

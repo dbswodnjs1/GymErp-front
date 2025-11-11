@@ -37,7 +37,7 @@ function EmpDetail({empNum: propEmpNum, onBack}) {
   async function loadEmployee() {
     try {
       if (!empNum) return; // empNum이 undefined일 경우 호출하지 않음
-      const res = await axios.get(`http://localhost:9000/v1/emp/${empNum}`);
+      const res = await axios.get(`/v1/emp/${empNum}`);
       setEmp(res.data);
     } catch (e) {
       console.error("직원 상세조회 실패:", e);
@@ -50,7 +50,7 @@ function EmpDetail({empNum: propEmpNum, onBack}) {
       if (!empNum) return;
       setMmLoading(true);
       setMmError(null);
-      const res = await axios.get(`http://localhost:9000/v1/emp/${empNum}/members/pt-users`);
+      const res = await axios.get(`/v1/emp/${empNum}/members/pt-users`);
       setManagedMembers(Array.isArray(res.data) ? res.data : []);
     } catch (e) {
       console.error("관리 회원 조회 실패:", e);
@@ -70,14 +70,12 @@ function EmpDetail({empNum: propEmpNum, onBack}) {
   if (!emp)
     return <div className="container mt-5 text-center">직원 정보를 불러오는 중...</div>;
 
-  const DEFAULT_PROFILE = "http://localhost:9000/profile/default.png";
-
   // 프로필 미리보기 URL 계산 (중첩 삼항 대신 함수로 분리)
   function getProfileUrl() {
     if (removeProfile) return null;                 // ← 삭제 예정이면 아이콘 보이도록
     if (preview) return preview;                    // 새 파일 미리보기
     if (emp?.profileImage) {
-      return `http://localhost:9000/profile/${emp.profileImage}`;
+      return `/profile/${emp.profileImage}`;
     }
     return null;                                    // DB에 null이면 아이콘 보이도록
   }
@@ -87,7 +85,7 @@ function EmpDetail({empNum: propEmpNum, onBack}) {
   const handleDelete = async () => {
     if (window.confirm(`정말 ${emp.empName} 직원을 삭제하시겠습니까?`)) {
       try {
-        await axios.delete(`http://localhost:9000/v1/emp/${empNum}`);
+        await axios.delete(`/v1/emp/${empNum}`);
         alert("직원 정보가 삭제되었습니다.");
         navigate("/emp");
       } catch (error) {
@@ -140,15 +138,16 @@ function EmpDetail({empNum: propEmpNum, onBack}) {
       form.append("emp", new Blob([JSON.stringify({ ...emp, removeProfile: false })], { type: "application/json" }));
       form.append("profileFile", pendingFile);
 
-      await axios.put(`http://localhost:9000/v1/emp/${empNum}`, form, {
+      await axios.put(`/v1/emp/${empNum}`, form, {
         // boundary는 브라우저가 설정하므로 Content-Type 생략
       });
     } else if (removeProfile) {
       // 2) 파일 변경 X + 삭제만 → JSON PUT
-      await axios.put(`http://localhost:9000/v1/emp/${empNum}`, { ...emp, profileImage: null, removeProfile: true });
+      await axios.put(`/v1/emp/${empNum}`, { ...emp, profileImage: null, removeProfile: true });
     } else {
       // 3) 일반 수정 → JSON PUT
-      await axios.put(`http://localhost:9000/v1/emp/${empNum}`, { ...emp, removeProfile: false });
+      await axios.put(`/v1/emp/${empNum}`, { ...emp, removeProfile: false });
+
     }
       alert("직원 정보가 수정되었습니다.");
       setIsEditMode(false);

@@ -1,14 +1,13 @@
 // src/pages/Sales/SalesItemDetail.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Container, Row, Col, Form, InputGroup, Button, Alert, Spinner, Card } from "react-bootstrap";
+
 import axios from "axios";
 import SalesItemSearchModal from "../../components/SalesItemSearchModal";
 
-const API_BASE = "http://localhost:9000";
-const DETAIL_API  = (id) => `${API_BASE}/v1/sales/products/${id}`;
-const UPDATE_API  = (id) => `${API_BASE}/v1/sales/products/${id}`;
-const DELETE_API  = (id) => `${API_BASE}/v1/sales/products/${id}`;
+const DETAIL_API  = (id) => "/v1/sales/products/${id}";
+const UPDATE_API  = (id) => "/v1/sales/products/${id}";
+const DELETE_API  = (id) => "/v1/sales/products/${id}";
 
 export default function SalesItemDetail() {
   const navigate = useNavigate();
@@ -144,7 +143,14 @@ export default function SalesItemDetail() {
       setMode("view");
     } catch (e) {
       console.error("저장 실패:", e);
-      setErr(e?.response?.data?.message || "저장 중 오류가 발생했습니다.");
+      console.error("백엔드 응답 오류:", e.response);
+
+      // 백엔드에서 오는 특정 오류 메시지 확인
+      if (e.response && e.response.status === 409) { // 재고 문제에 대한 Conflict 상태
+        setErr(e.response.data || "재고 수량 부족으로 저장에 실패했습니다.");
+      } else {
+        setErr(e?.response?.data?.message || "저장 중 오류가 발생했습니다.");
+      }
     } finally {
       setSaving(false);
     }
@@ -185,190 +191,193 @@ export default function SalesItemDetail() {
     : `${displayId}번 상품판매내역 수정`;
 
   return (
-    <Container className="py-4">
-      {/* 상단: 제목 */}
-      <div className="d-flex align-items-center justify-content-between mb-3">
-        <h3 className="m-0">{titleText}</h3>
-      </div>
+    <div
+      className="d-flex"
+      style={{
+        minHeight: '100vh',
+        width: '100%',
+        backgroundColor: '#f8f9fa',
+        overflowX: 'hidden',
+      }}
+    >
+      <main
+        className="flex-grow-1 d-flex justify-content-center align-items-center"
+        style={{ padding: '40px 20px', boxSizing: 'border-box' }}
+      >
+        <div
+          className="content-wrapper"
+          style={{
+            width: '100%',
+            maxWidth: '900px',
+            backgroundColor: '#fff',
+            borderRadius: '10px',
+            padding: '45px 40px',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+            boxSizing: 'border-box',
+            marginBottom: '25vh',
+          }}
+        >
+          <h2 className="border-bottom pb-2 mb-4 fw-bold">
+            {titleText}
+            <br />
+            <br />
+          </h2>
 
-      {err && <Alert variant="danger" className="mb-3">{err}</Alert>}
+          {err && <div className="alert alert-danger mb-3">{err}</div>}
 
-      <Card className="rounded-4 shadow-sm overflow-hidden">
-        <Card.Body className="p-0">
           {loading ? (
             <div className="py-5 text-center">
-              <Spinner animation="border" />
+              <div className="spinner-border" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
             </div>
           ) : (
-            <>
-              {/* 1) 상품명 — 수정 모드에만 입력/검색 가능 (흰색) */}
-              <Row className="g-0 border-bottom">
-                <Col md={3} className="bg-dark text-white fw-semibold d-flex align-items-center px-3 py-3">
-                  상품명
-                </Col>
-                <Col md={9} className="d-flex align-items-center px-3 py-3">
-                  <InputGroup className="flex-grow-1">
-                    <Form.Control
-                      value={form.productName}
-                      placeholder="상품명"
-                      onChange={(e) => patch("productName", e.target.value)}
-                      onClick={openProductSearch}
-                      readOnly={readOnly}
-                      style={ctrlStyle(true)}
-                    />
-                    <Button
-                      variant="outline-secondary"
-                      onClick={openProductSearch}
-                      disabled={readOnly}
-                      title="상품 검색"
-                    >
-                      <i className="bi bi-search" />
-                    </Button>
-                  </InputGroup>
-                </Col>
-              </Row>
+            <form onSubmit={(e) => e.preventDefault()} className="border rounded-4 shadow-sm overflow-hidden mt-4">
+              <table className="table m-0 align-middle text-center">
+                <tbody>
+                  {/* 상품명 */}
+                  <tr>
+                    <th className="bg-dark text-white text-center align-middle" style={{ width: "30%" }}>상품명</th>
+                    <td className="bg-light align-middle position-relative">
+                      <div className="d-flex justify-content-center" style={{ width: 340, margin: "0 auto" }}>
+                        <input
+                          type="text"
+                          className="form-control text-center"
+                          value={form.productName}
+                          placeholder="상품명"
+                          onClick={openProductSearch}
+                          readOnly={readOnly}
+                          style={ctrlStyle(true)}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-outline-secondary position-absolute"
+                          style={{ right: "calc(50% - 170px - 45px)", height: 38 }}
+                          onClick={openProductSearch}
+                          disabled={readOnly}
+                          title="상품 검색"
+                        >
+                          <i className="bi bi-search" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
 
-              {/* 2) 구분 — 항상 읽기 전용 (연회색) */}
-              <Row className="g-0 border-bottom">
-                <Col md={3} className="bg-dark text-white fw-semibold d-flex align-items-center px-3 py-3">
-                  구분
-                </Col>
-                <Col md={9} className="d-flex align-items-center px-3 py-3">
-                  <Form.Control
-                    value={form.productType}
-                    readOnly
-                    style={ctrlStyle(false)}
-                  />
-                </Col>
-              </Row>
+                  {/* 구분 */}
+                  <tr>
+                    <th className="bg-dark text-white text-center align-middle">구분</th>
+                    <td className="bg-light align-middle">
+                      <input className="form-control text-center mx-auto" style={{ ...ctrlStyle(false), width: 340 }} value={form.productType} readOnly />
+                    </td>
+                  </tr>
 
-              {/* 3) 판매자 이메일 — 항상 읽기 전용 (연회색) */}
-              <Row className="g-0 border-bottom">
-                <Col md={3} className="bg-dark text-white fw-semibold d-flex align-items-center px-3 py-3">
-                  판매자 이메일
-                </Col>
-                <Col md={9} className="d-flex align-items-center px-3 py-3">
-                  <Form.Control
-                    value={form.empEmail}
-                    readOnly
-                    placeholder="판매자 이메일"
-                    style={ctrlStyle(false)}
-                  />
-                </Col>
-              </Row>
+                  {/* 판매자 이메일 */}
+                  <tr>
+                    <th className="bg-dark text-white text-center align-middle">판매자 이메일</th>
+                    <td className="bg-light align-middle">
+                      <input className="form-control text-center mx-auto" style={{ ...ctrlStyle(false), width: 340 }} value={form.empEmail} readOnly placeholder="판매자 이메일" />
+                    </td>
+                  </tr>
 
-              {/* 4) 판매 수량 — 수정 가능 (흰색) */}
-              <Row className="g-0 border-bottom">
-                <Col md={3} className="bg-dark text-white fw-semibold d-flex align-items-center px-3 py-3">
-                  판매 수량
-                </Col>
-                <Col md={9} className="d-flex align-items-center px-3 py-3">
-                  <Form.Control
-                    type="number"
-                    min={0}
-                    value={form.quantity}
-                    onChange={(e) => patch("quantity", Number(e.target.value || 0))}
-                    readOnly={readOnly}
-                    style={ctrlStyle(true)}
-                  />
-                </Col>
-              </Row>
+                  {/* 판매 수량 */}
+                  <tr>
+                    <th className="bg-dark text-white text-center align-middle">판매 수량</th>
+                    <td className="bg-light align-middle">
+                      <input
+                        type="number"
+                        min="0"
+                        className="form-control text-center mx-auto"
+                        style={{ ...ctrlStyle(true), width: 340 }}
+                        value={form.quantity}
+                        onChange={(e) => patch("quantity", Number(e.target.value || 0))}
+                        readOnly={readOnly}
+                      />
+                    </td>
+                  </tr>
 
-              {/* 5) 단가(원) — 항상 읽기 전용 (상품 선택 시 자동 반영, 연회색) */}
-              <Row className="g-0 border-bottom">
-                <Col md={3} className="bg-dark text-white fw-semibold d-flex align-items-center px-3 py-3">
-                  단가 (원)
-                </Col>
-                <Col md={9} className="d-flex align-items-center px-3 py-3">
-                  <Form.Control
-                    type="number"
-                    value={form.unitPrice}
-                    readOnly
-                    style={ctrlStyle(false)}
-                  />
-                </Col>
-              </Row>
+                  {/* 단가 */}
+                  <tr>
+                    <th className="bg-dark text-white text-center align-middle">단가 (원)</th>
+                    <td className="bg-light align-middle">
+                      <input className="form-control text-center mx-auto" style={{ ...ctrlStyle(false), width: 340 }} value={numFmt(form.unitPrice)} readOnly />
+                    </td>
+                  </tr>
 
-              {/* 6) 총액(원) — 계산 표시용 (연회색) */}
-              <Row className="g-0 border-bottom">
-                <Col md={3} className="bg-dark text-white fw-semibold d-flex align-items-center px-3 py-3">
-                  총액 (원)
-                </Col>
-                <Col md={9} className="d-flex align-items-center px-3 py-3">
-                  <Form.Control value={numFmt(totalAmount)} readOnly style={ctrlStyle(false)} />
-                </Col>
-              </Row>
+                  {/* 총액 */}
+                  <tr>
+                    <th className="bg-dark text-white text-center align-middle">총액 (원)</th>
+                    <td className="bg-light align-middle">
+                      <input className="form-control text-center mx-auto" style={{ ...ctrlStyle(false), width: 340 }} value={numFmt(totalAmount)} readOnly />
+                    </td>
+                  </tr>
 
-              {/* 7) 등록일 — 항상 읽기 전용 */}
-              <Row className="g-0 border-bottom">
-                <Col md={3} className="bg-dark text-white fw-semibold d-flex align-items-center px-3 py-3">
-                  등록일
-                </Col>
-                <Col md={9} className="d-flex align-items-center px-3 py-3">
-                  <Form.Control type="date" value={form.createdAt} readOnly style={ctrlStyle(false)} />
-                </Col>
-              </Row>
+                  {/* 등록일 */}
+                  <tr>
+                    <th className="bg-dark text-white text-center align-middle">등록일</th>
+                    <td className="bg-light align-middle">
+                      <input type="date" className="form-control text-center mx-auto" style={{ ...ctrlStyle(false), width: 340 }} value={form.createdAt} readOnly />
+                    </td>
+                  </tr>
 
-              {/* 8) 수정일 — 항상 읽기 전용 */}
-              <Row className="g-0">
-                <Col md={3} className="bg-dark text-white fw-semibold d-flex align-items-center px-3 py-3">
-                  수정일
-                </Col>
-                <Col md={9} className="d-flex align-items-center px-3 py-3">
-                  <Form.Control type="date" value={form.updatedAt} readOnly style={ctrlStyle(false)} />
-                </Col>
-              </Row>
-            </>
+                  {/* 수정일 */}
+                  <tr>
+                    <th className="bg-dark text-white text-center align-middle">수정일</th>
+                    <td className="bg-light align-middle">
+                      <input type="date" className="form-control text-center mx-auto" style={{ ...ctrlStyle(false), width: 340 }} value={form.updatedAt} readOnly />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* 하단 액션 바 */}
+              <div className="text-center p-3 bg-white border-top d-flex justify-content-center gap-2">
+                {readOnly ? (
+                  <>
+                    <button className="btn btn-primary" onClick={() => setMode("edit")} disabled={!itemId}>
+                      수정
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+                      확인
+                    </button>
+                    <button className="btn btn-danger" onClick={handleDelete}>
+                      삭제
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button className="btn btn-secondary" onClick={handleCancelEdit} disabled={saving}>
+                      수정취소
+                    </button>
+                    <button className="btn btn-success" onClick={handleSave} disabled={saving || loading}>
+                      {saving ? "저장 중..." : "저장"}
+                    </button>
+                    <button className="btn btn-danger" onClick={handleDelete} disabled={saving || loading}>
+                      삭제
+                    </button>
+                  </>
+                )}
+              </div>
+            </form>
           )}
-        </Card.Body>
-      </Card>
 
-      {/* 하단 액션 바 */}
-      <div className="d-flex justify-content-center gap-2 mt-3">
-        {readOnly ? (
-          <>
-            <Button variant="primary" onClick={() => setMode("edit")} disabled={!itemId}>
-              수정
-            </Button>
-            <Button variant="secondary" onClick={() => navigate(-1)}>
-              확인
-            </Button>
-            <Button variant="danger" onClick={handleDelete}>
-              삭제
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="secondary" onClick={handleCancelEdit} disabled={saving}>
-              수정취소
-            </Button>
-            <Button variant="success" onClick={handleSave} disabled={saving || loading}>
-              {saving ? "저장 중..." : "저장"}
-            </Button>
-            <Button variant="danger" onClick={handleDelete} disabled={saving || loading}>
-              삭제
-            </Button>
-          </>
-        )}
-      </div>
-
-      {/* 상품 검색 모달 (수정 모드에서만) */}
-      <SalesItemSearchModal
-        show={productModalOpen}
-        onHide={() => setProductModalOpen(false)}
-        onExited={() => {}}
-        onSelect={(p) => {
-          // 상품 선택 시 자동 반영(단가/구분도 서버 값 기반으로 표시만 변경)
-          setForm((f) => ({
-            ...f,
-            productId: p.productId,
-            productName: p.name,
-            productType: p.codeBId || "PRODUCT",
-            unitPrice: p.price ?? f.unitPrice,
-          }));
-          setProductModalOpen(false);
-        }}
-      />
-    </Container>
+          {/* 상품 검색 모달 (수정 모드에서만) */}
+          <SalesItemSearchModal
+            show={productModalOpen}
+            onHide={() => setProductModalOpen(false)}
+            onExited={() => {}}
+            onSelect={(p) => {
+              setForm((f) => ({
+                ...f,
+                productId: p.productId,
+                productName: p.name,
+                productType: p.codeBId || "PRODUCT",
+                unitPrice: p.price ?? f.unitPrice,
+              }));
+              setProductModalOpen(false);
+            }}
+          />
+        </div>
+      </main>
+    </div>
   );
 }

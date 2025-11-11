@@ -23,7 +23,7 @@ function MemberSearchModal({ show, onHide, onSelect }) {
       // setTotalPage(data.totalPage || 1);
 
       // 2) 서버 페이징 없음 → 한 번에 받아서 프론트에서 슬라이싱
-      const { data } = await axios.get("http://localhost:9000/v1/member/search", {
+      const { data } = await axios.get("/v1/member/search", {
         params: { type, keyword },
       });
       const all = Array.isArray(data) ? data : (data?.list || []);

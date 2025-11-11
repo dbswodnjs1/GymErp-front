@@ -31,11 +31,10 @@ function SalesServiceEdit() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 모달 상태
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
 
-  // 숫자 포맷 / 파싱 함수
+  // 숫자 포맷/파싱 함수
   const formatNumber = (value) =>
     value === null || value === ""
       ? ""
@@ -43,24 +42,21 @@ function SalesServiceEdit() {
 
   const parseNumber = (value) => Number(value.replace(/[^0-9]/g, "")) || 0;
 
-  // 1. 초기 데이터 로딩
+  // ✅ 1. 데이터 로딩
   useEffect(() => {
     if (!id) return;
 
     const fetchData = async () => {
       setLoading(true);
       setError("");
-
       try {
         const res = await axios.get(`/v1/sales/services/${id}`);
-
         const data =
           res?.data?.serviceName !== undefined
             ? res.data
             : res?.data?.data
             ? res.data.data
             : null;
-
         if (!data) {
           setError("데이터를 불러오지 못했습니다.");
           return;
@@ -68,7 +64,6 @@ function SalesServiceEdit() {
 
         const today = new Date().toISOString().slice(0, 10);
 
-        // 회원 이름 조회
         let memName = "";
         if (data.memNum) {
           try {
@@ -79,7 +74,6 @@ function SalesServiceEdit() {
           }
         }
 
-        // 직원 이름 조회
         let empName = "";
         if (data.empNum) {
           try {
@@ -100,11 +94,9 @@ function SalesServiceEdit() {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [id]);
 
-  // 로딩 중
   if (loading)
     return (
       <div className="text-center mt-5">
@@ -112,7 +104,6 @@ function SalesServiceEdit() {
       </div>
     );
 
-  // 에러 발생
   if (error)
     return (
       <div className="text-center mt-5 text-danger">
@@ -123,7 +114,7 @@ function SalesServiceEdit() {
       </div>
     );
 
-  // 2. 입력값 변경
+  // ✅ 2. 입력 변경
   const handleChange = (e) => {
     const { name, value } = e.target;
     const num = parseNumber(value);
@@ -145,7 +136,7 @@ function SalesServiceEdit() {
     }
   };
 
-  // 회원 선택 완료
+  // 회원 선택
   const handleSelectMember = (member) => {
     setForm((prev) => ({
       ...prev,
@@ -155,7 +146,7 @@ function SalesServiceEdit() {
     setShowMemberModal(false);
   };
 
-  // 서비스 선택 완료
+  // 서비스 선택
   const handleSelectService = (service) => {
     if (!service) return;
     const price = Number(service.price ?? 0);
@@ -173,11 +164,10 @@ function SalesServiceEdit() {
       actualAmount: price,
       discount: 0,
     }));
-
     setShowServiceModal(false);
   };
 
-  // ✅ 3. 수정 확인 (예외 메시지 처리 강화)
+  // ✅ 수정 확인
   const handleConfirm = async (e) => {
     e.preventDefault();
     try {
@@ -204,8 +194,6 @@ function SalesServiceEdit() {
         navigate(`/sales/salesservicedetail/${id}`);
       } else {
         const msg = res.data.message || "수정 실패: 요청을 다시 확인해주세요.";
-
-        // ✅ 최저점 보장 관련 메시지 강조
         if (msg.includes("최소 1회") || msg.includes("1일 이상")) {
           alert(`❗ ${msg}`);
         } else {
@@ -218,281 +206,267 @@ function SalesServiceEdit() {
     }
   };
 
-  // 4. 수정 취소
-  const handleCancel = () => {
-    navigate(`/sales/salesservicedetail/${id}`);
-  };
+  const handleCancel = () => navigate(`/sales/salesservicedetail/${id}`);
 
+  // ✅ 렌더링
   return (
-    <div className="container mt-5" style={{ maxWidth: "700px" }}>
-      <h4 className="fw-bold mb-5 text-start">
-        {id}번 서비스 판매 내역 수정
-      </h4>
-
-      {/* 모달 연결 */}
-      <MemberSearchModal
-        show={showMemberModal}
-        onHide={() => setShowMemberModal(false)}
-        onSelect={handleSelectMember}
-      />
-
-      <SalesServiceSearchModal
-        show={showServiceModal}
-        onHide={() => setShowServiceModal(false)}
-        onSelect={handleSelectService}
-      />
-
-      <form
-        onSubmit={handleConfirm}
-        className="border rounded-4 shadow-sm overflow-hidden mt-4"
-      >
-        <table className="table table-striped m-0 align-middle text-center">
-          <tbody>
-            {/* 상품명 */}
-            <tr>
-              <th
-                className="bg-dark text-white text-center align-middle"
-                style={{ width: "30%" }}
-              >
-                상품명
-              </th>
-              <td className="bg-light align-middle position-relative">
-                <div
-                  className="d-flex justify-content-center"
-                  style={{ width: "340px", margin: "0 auto" }}
-                >
-                  <input
-                    type="text"
-                    name="serviceName"
-                    className="form-control text-center"
-                    placeholder="상품 선택"
-                    value={form.serviceName}
-                    readOnly
-                    style={{ width: "100%" }}
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary position-absolute"
-                    style={{
-                      right: "calc(50% - 170px - 45px)",
-                      height: "38px",
-                    }}
-                    onClick={() => setShowServiceModal(true)}
-                  >
-                    <FaSearch />
-                  </button>
-                </div>
-              </td>
-            </tr>
-
-            {/* 구분 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                구분
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="text"
-                  name="serviceType"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={form.serviceType}
-                  readOnly
-                />
-              </td>
-            </tr>
-
-            {/* 회원 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                회원
-              </th>
-              <td className="bg-light align-middle position-relative">
-                <div
-                  className="d-flex justify-content-center"
-                  style={{ width: "340px", margin: "0 auto" }}
-                >
-                  <input
-                    type="text"
-                    name="memName"
-                    className="form-control text-center"
-                    placeholder="회원 선택"
-                    value={form.memName}
-                    readOnly
-                    style={{ width: "100%" }}
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary position-absolute"
-                    style={{
-                      right: "calc(50% - 170px - 45px)",
-                      height: "38px",
-                    }}
-                    onClick={() => setShowMemberModal(true)}
-                  >
-                    <FaSearch />
-                  </button>
-                </div>
-              </td>
-            </tr>
-
-            {/* 직원 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                직원
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="text"
-                  name="empName"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={form.empName}
-                  readOnly
-                />
-              </td>
-            </tr>
-
-            {/* 횟수/일수 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                횟수/일수
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="number"
-                  name="baseCount"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={form.baseCount}
-                  readOnly
-                />
-              </td>
-            </tr>
-
-            {/* 실제 횟수/일수 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                실제 횟수/일수
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="number"
-                  name="actualCount"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={form.actualCount}
-                  onChange={handleChange}
-                />
-              </td>
-            </tr>
-
-            {/* 총액 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                총액(원)
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="text"
-                  name="baseAmount"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={formatNumber(form.baseAmount)}
-                  readOnly
-                />
-              </td>
-            </tr>
-
-            {/* 할인금액 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                할인금액(원)
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="text"
-                  name="discount"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={formatNumber(form.discount)}
-                  onChange={handleChange}
-                />
-              </td>
-            </tr>
-
-            {/* 최종금액 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                최종금액(원)
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="text"
-                  name="actualAmount"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={formatNumber(form.actualAmount)}
-                  onChange={handleChange}
-                />
-              </td>
-            </tr>
-
-            {/* 등록일 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                등록일
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="date"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={form.createdAt ? form.createdAt.slice(0, 10) : ""}
-                  readOnly
-                />
-              </td>
-            </tr>
-
-            {/* 수정일 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                수정일
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="date"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={form.updatedAt ? form.updatedAt.slice(0, 10) : ""}
-                  readOnly
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </form>
-
-      {/* 버튼 영역 */}
+    <div
+      className="d-flex justify-content-center align-items-start"
+      style={{
+        minHeight: "100vh",
+        width: "100%",
+        backgroundColor: "#f8f9fa",
+        overflowX: "hidden",
+        paddingTop: "60px",
+      }}
+    >
       <div
-        className="d-flex justify-content-center align-items-center mt-4"
-        style={{ gap: "20px" }}
+        style={{
+          width: "1200px",
+          zoom: "1.0",
+          transformOrigin: "top center",
+          overflow: "visible",
+        }}
       >
-        <button
-          type="button"
-          className="btn btn-secondary px-5"
-          onClick={handleCancel}
-        >
-          취소
-        </button>
+        <div className="container" style={{ maxWidth: "900px", overflow: "visible" }}>
+          <h4 className="fw-bold mb-5 text-center">
+            {id}번 서비스 판매 내역 수정
+          </h4>
 
-        <button
-          type="submit"
-          className="btn btn-primary px-5"
-          onClick={handleConfirm}
-        >
-          확인
-        </button>
+          {/* ✅ 모달 */}
+          <MemberSearchModal
+            show={showMemberModal}
+            onHide={() => setShowMemberModal(false)}
+            onSelect={handleSelectMember}
+          />
+          <SalesServiceSearchModal
+            show={showServiceModal}
+            onHide={() => setShowServiceModal(false)}
+            onSelect={handleSelectService}
+          />
+
+          {/* ✅ 테이블 */}
+          <form
+            onSubmit={handleConfirm}
+            className="border rounded-4 shadow-sm overflow-hidden mt-4 bg-white"
+          >
+            <table className="table table-striped m-0 align-middle text-center">
+              <tbody>
+                <tr>
+                  <th className="bg-dark text-white align-middle">상품명</th>
+                  <td className="bg-light align-middle position-relative">
+                    <div
+                      className="d-flex justify-content-center"
+                      style={{ width: "340px", margin: "0 auto" }}
+                    >
+                      <input
+                        type="text"
+                        name="serviceName"
+                        className="form-control text-center"
+                        placeholder="상품 선택"
+                        value={form.serviceName}
+                        readOnly
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary position-absolute"
+                        style={{
+                          right: "calc(50% - 170px - 45px)",
+                          height: "38px",
+                        }}
+                        onClick={() => setShowServiceModal(true)}
+                      >
+                        <FaSearch />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <th className="bg-dark text-white align-middle">구분</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="text"
+                      name="serviceType"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={form.serviceType}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+
+                <tr>
+                  <th className="bg-dark text-white align-middle">회원</th>
+                  <td className="bg-light align-middle position-relative">
+                    <div
+                      className="d-flex justify-content-center"
+                      style={{ width: "340px", margin: "0 auto" }}
+                    >
+                      <input
+                        type="text"
+                        name="memName"
+                        className="form-control text-center"
+                        placeholder="회원 선택"
+                        value={form.memName}
+                        readOnly
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary position-absolute"
+                        style={{
+                          right: "calc(50% - 170px - 45px)",
+                          height: "38px",
+                        }}
+                        onClick={() => setShowMemberModal(true)}
+                      >
+                        <FaSearch />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <th className="bg-dark text-white align-middle">직원</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="text"
+                      name="empName"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={form.empName}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+
+                <tr>
+                  <th className="bg-dark text-white align-middle">횟수/일수</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="number"
+                      name="baseCount"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={form.baseCount}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+
+                <tr>
+                  <th className="bg-dark text-white align-middle">
+                    실제 횟수/일수
+                  </th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="number"
+                      name="actualCount"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={form.actualCount}
+                      onChange={handleChange}
+                    />
+                  </td>
+                </tr>
+
+                <tr>
+                  <th className="bg-dark text-white align-middle">총액(원)</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="text"
+                      name="baseAmount"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={formatNumber(form.baseAmount)}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+
+                <tr>
+                  <th className="bg-dark text-white align-middle">
+                    할인금액(원)
+                  </th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="text"
+                      name="discount"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={formatNumber(form.discount)}
+                      onChange={handleChange}
+                    />
+                  </td>
+                </tr>
+
+                <tr>
+                  <th className="bg-dark text-white align-middle">
+                    최종금액(원)
+                  </th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="text"
+                      name="actualAmount"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={formatNumber(form.actualAmount)}
+                      onChange={handleChange}
+                    />
+                  </td>
+                </tr>
+
+                <tr>
+                  <th className="bg-dark text-white align-middle">등록일</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="date"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={form.createdAt ? form.createdAt.slice(0, 10) : ""}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+
+                <tr>
+                  <th className="bg-dark text-white align-middle">수정일</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="date"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={form.updatedAt ? form.updatedAt.slice(0, 10) : ""}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </form>
+
+          {/* ✅ 버튼 영역 */}
+          <div
+            className="d-flex justify-content-center align-items-center mt-4"
+            style={{ gap: "20px" }}
+          >
+            <button
+              type="button"
+              className="btn btn-secondary px-5"
+              onClick={handleCancel}
+            >
+              취소
+            </button>
+
+            <button
+              type="submit"
+              className="btn btn-primary px-5"
+              onClick={handleConfirm}
+            >
+              확인
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

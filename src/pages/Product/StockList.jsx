@@ -41,20 +41,21 @@ function StockList() {
         axios.get(`/v1/product?${qs.toString()}`)
             .then(res => {
                 setPageInfo(res.data);
-                // 페이지 첫 로드 시, URL에 productId가 없으면 목록의 첫 항목을 기본 선택
-                if (!selectedProductId && res.data.list.length > 0) {
-                    const firstProductId = res.data.list[0].productId;
-                    // URL을 변경하지 않고, 내부 상태만 업데이트하여 오른쪽 패널을 렌더링
-                    // 이 방법은 복잡성을 증가시키므로, URL을 업데이트하는 방식을 유지합니다.
-                    // 아래 handleRowClick에서 이 로직을 처리합니다.
-                    const newParams = new URLSearchParams(params.toString());
-                    newParams.set('productId', firstProductId);
-                    setSearchParams(newParams);
-                }
             })
             .catch(err => console.error('상품 목록 조회 실패:', err))
             .finally(() => setLoading(false));
     }, [productPageNum, keyword, JSON.stringify(categoryCodes), sortConfig]);
+
+    // 페이지 첫 로드 시, URL에 productId가 없으면 목록의 첫 항목을 기본 선택
+    useEffect(() => {
+        const currentParams = new URLSearchParams(params);
+        if (!currentParams.has('productId') && pageInfo.list.length > 0) {
+            const firstProductId = pageInfo.list[0].productId;
+            currentParams.set('productId', firstProductId);
+            // `replace: true`는 브라우저 히스토리에 새 항목을 추가하는 대신 현재 항목을 교체합니다.
+            setSearchParams(currentParams, { replace: true });
+        }
+    }, [pageInfo.list, params, setSearchParams]);
 
     // selectedProductId가 변경되면, 해당 상품의 상세 정보와 재고 내역을 불러옴
     useEffect(() => {

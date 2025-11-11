@@ -31,7 +31,7 @@ function SalesServiceDetail() {
       ? ""
       : value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-  // 1. 데이터 로딩
+  // ✅ 1. 데이터 로딩
   useEffect(() => {
     if (!id) return;
 
@@ -90,17 +90,16 @@ function SalesServiceDetail() {
     fetchData();
   }, [id]);
 
-  // 2. 로딩 중일 때
-  if (loading) {
+  // ✅ 2. 로딩 중
+  if (loading)
     return (
       <div className="text-center mt-5">
         <h5>데이터를 불러오는 중입니다...</h5>
       </div>
     );
-  }
 
-  // 3. 에러 발생 시
-  if (error) {
+  // ✅ 3. 에러 처리
+  if (error)
     return (
       <div className="text-center mt-5 text-danger">
         <h5>{error}</h5>
@@ -112,9 +111,8 @@ function SalesServiceDetail() {
         </button>
       </div>
     );
-  }
 
-  // 4. 버튼 이벤트
+  // ✅ 4. 버튼 이벤트
   const handleEdit = () => navigate(`/sales/salesserviceedit/${id}`);
   const handleConfirm = () => {
     navigate("/sales/salesservicelist", {
@@ -133,7 +131,6 @@ function SalesServiceDetail() {
     try {
       const res = await axios.delete(`/v1/sales/services/${id}`);
 
-      // ✅ 성공
       if (res.data?.success) {
         alert(`${id}번 판매 내역이 성공적으로 삭제되었습니다.`);
         navigate("/sales/salesservicelist", {
@@ -142,11 +139,8 @@ function SalesServiceDetail() {
             preservedPage: sessionStorage.getItem("salesServicePage"),
           },
         });
-      }
-      // ⚠ 실패 (예외 메시지 alert 표시)
-      else {
+      } else {
         const msg = res.data?.message || "삭제 실패: 요청을 다시 확인해주세요.";
-
         if (
           msg.includes("환불 불가") ||
           msg.includes("전체 환불") ||
@@ -164,239 +158,226 @@ function SalesServiceDetail() {
     }
   };
 
-  // 5. 화면 렌더링
+  // ✅ 5. 렌더링
   return (
-    <div className="container mt-5" style={{ maxWidth: "700px" }}>
-      <h4 className="fw-bold mb-5 text-start">
-        {id}번 서비스 판매 내역 조회
-      </h4>
-
-      {/* 테이블 - Edit과 동일한 구조 */}
-      <form className="border rounded-4 shadow-sm overflow-hidden">
-        <table className="table table-striped m-0 align-middle text-center">
-          <tbody>
-            {/* 상품명 */}
-            <tr>
-              <th
-                className="bg-dark text-white text-center align-middle"
-                style={{ width: "30%" }}
-              >
-                상품명
-              </th>
-              <td className="bg-light align-middle position-relative">
-                <div
-                  className="d-flex justify-content-center"
-                  style={{ width: "340px", margin: "0 auto" }}
-                >
-                  <input
-                    type="text"
-                    name="serviceName"
-                    className="form-control text-center"
-                    value={form.serviceName}
-                    readOnly
-                    style={{ width: "100%" }}
-                  />
-                </div>
-              </td>
-            </tr>
-
-            {/* 구분 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                구분
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="text"
-                  name="serviceType"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={form.serviceType}
-                  readOnly
-                />
-              </td>
-            </tr>
-
-            {/* 회원 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                회원
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="text"
-                  name="memName"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={form.memName}
-                  readOnly
-                />
-              </td>
-            </tr>
-
-            {/* 직원 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                직원
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="text"
-                  name="empName"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={form.empName}
-                  readOnly
-                />
-              </td>
-            </tr>
-
-            {/* 횟수/일수 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                횟수/일수
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="number"
-                  name="baseCount"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={form.baseCount}
-                  readOnly
-                />
-              </td>
-            </tr>
-
-            {/* 실제 횟수/일수 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                실제 횟수/일수
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="number"
-                  name="actualCount"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={form.actualCount}
-                  readOnly
-                />
-              </td>
-            </tr>
-
-            {/* 총액 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                총액(원)
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="text"
-                  name="baseAmount"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={formatNumber(form.baseAmount)}
-                  readOnly
-                />
-              </td>
-            </tr>
-
-            {/* 할인금액 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                할인금액(원)
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="text"
-                  name="discount"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={formatNumber(form.discount)}
-                  readOnly
-                />
-              </td>
-            </tr>
-
-            {/* 최종금액 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                최종금액(원)
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="text"
-                  name="actualAmount"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={formatNumber(form.actualAmount)}
-                  readOnly
-                />
-              </td>
-            </tr>
-
-            {/* 등록일 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                등록일
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="date"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={form.createdAt ? form.createdAt.slice(0, 10) : ""}
-                  readOnly
-                />
-              </td>
-            </tr>
-
-            {/* 수정일 */}
-            <tr>
-              <th className="bg-dark text-white text-center align-middle">
-                수정일
-              </th>
-              <td className="bg-light align-middle">
-                <input
-                  type="date"
-                  className="form-control text-center mx-auto"
-                  style={{ width: "340px" }}
-                  value={form.updatedAt ? form.updatedAt.slice(0, 10) : ""}
-                  readOnly
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </form>
-
-      {/* 버튼 영역 */}
+    <div
+      className="d-flex justify-content-center align-items-start"
+      style={{
+        minHeight: "100vh",
+        width: "100%",
+        backgroundColor: "#f8f9fa",
+        overflowX: "hidden",
+        paddingTop: "60px", // ✅ 기준 동일
+      }}
+    >
       <div
-        className="d-flex justify-content-center align-items-center mt-4"
-        style={{ gap: "20px" }}
+        style={{
+          width: "1200px",
+          zoom: "1.00",
+          transformOrigin: "top center",
+          overflow: "visible",
+        }}
       >
-        <button
-          type="button"
-          className="btn btn-primary px-4"
-          onClick={handleEdit}
+        <div
+          className="container"
+          style={{
+            maxWidth: "900px",
+            overflow: "visible",
+          }}
         >
-          수정
-        </button>
-        <button
-          type="button"
-          className="btn btn-success px-4"
-          onClick={handleConfirm}
-        >
-          확인
-        </button>
-        <button
-          type="button"
-          className="btn btn-danger px-4"
-          onClick={handleDelete}
-        >
-          삭제
-        </button>
+          <h4 className="fw-bold mb-5 text-center">
+            {id}번 서비스 판매 내역 조회
+          </h4>
+
+          {/* ✅ 테이블 (기준 페이지 동일 비율) */}
+          <form
+            className="border rounded-4 shadow-sm overflow-hidden bg-white"
+            style={{ overflow: "visible" }}
+          >
+            <table
+              className="table table-striped m-0 align-middle text-center"
+              style={{ overflow: "visible" }}
+            >
+              <tbody>
+                <tr>
+                  <th className="bg-dark text-white align-middle">상품명</th>
+                  <td className="bg-light align-middle position-relative">
+                    <div
+                      className="d-flex justify-content-center"
+                      style={{ width: "340px", margin: "0 auto" }}
+                    >
+                      <input
+                        type="text"
+                        name="serviceName"
+                        className="form-control text-center"
+                        value={form.serviceName}
+                        readOnly
+                      />
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <th className="bg-dark text-white align-middle">구분</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="text"
+                      name="serviceType"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={form.serviceType}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th className="bg-dark text-white align-middle">회원</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="text"
+                      name="memName"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={form.memName}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th className="bg-dark text-white align-middle">직원</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="text"
+                      name="empName"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={form.empName}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th className="bg-dark text-white align-middle">횟수/일수</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="number"
+                      name="baseCount"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={form.baseCount}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th className="bg-dark text-white align-middle">
+                    실제 횟수/일수
+                  </th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="number"
+                      name="actualCount"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={form.actualCount}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th className="bg-dark text-white align-middle">총액(원)</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="text"
+                      name="baseAmount"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={formatNumber(form.baseAmount)}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th className="bg-dark text-white align-middle">할인금액(원)</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="text"
+                      name="discount"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={formatNumber(form.discount)}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th className="bg-dark text-white align-middle">최종금액(원)</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="text"
+                      name="actualAmount"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={formatNumber(form.actualAmount)}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th className="bg-dark text-white align-middle">등록일</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="date"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={form.createdAt ? form.createdAt.slice(0, 10) : ""}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th className="bg-dark text-white align-middle">수정일</th>
+                  <td className="bg-light align-middle">
+                    <input
+                      type="date"
+                      className="form-control text-center mx-auto"
+                      style={{ width: "340px" }}
+                      value={form.updatedAt ? form.updatedAt.slice(0, 10) : ""}
+                      readOnly
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </form>
+
+          {/* ✅ 버튼 영역 (기준 유지) */}
+          <div
+            className="d-flex justify-content-center align-items-center mt-4"
+            style={{ gap: "20px" }}
+          >
+            <button
+              type="button"
+              className="btn btn-primary px-4"
+              onClick={handleEdit}
+            >
+              수정
+            </button>
+            <button
+              type="button"
+              className="btn btn-success px-4"
+              onClick={handleConfirm}
+            >
+              확인
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger px-4"
+              onClick={handleDelete}
+            >
+              삭제
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

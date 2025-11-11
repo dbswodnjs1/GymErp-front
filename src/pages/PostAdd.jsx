@@ -73,7 +73,7 @@ export default function PostAdd() {
 
     try {
       setSubmitting(true);
-      const res = await axios.post("http://localhost:9000/v1/post", payload, {
+      const res = await axios.post("/v1/post", payload, {
         headers: { "Content-Type": "application/json" },
       });
       const newId = res.data?.postId ?? res.data ?? null;

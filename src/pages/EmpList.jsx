@@ -30,7 +30,8 @@ export default function EmpList() {
       // 상태 조건에 따라 서버 파라미터 설정 (백엔드 규격에 맞게 수정)
       if (status === "ACTIVE") params.status = "ACTIVE";
       else if (status === "RESIGNED") params.status = "RESIGNED";
-      const res = await axios.get("http://localhost:9000/v1/emp/list/paging", { params });
+
+      const res = await axios.get("/v1/emp/list/paging", { params });
       setEmployees(res.data.list || []);
     } catch (err) {
       console.error("직원 목록 조회 실패:", err);
