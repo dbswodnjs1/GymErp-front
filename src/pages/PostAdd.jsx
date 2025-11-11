@@ -11,6 +11,19 @@ import {
 } from "react-bootstrap";
 import { FaThumbtack, FaSave, FaTimes, FaEye, FaEdit, FaInfoCircle } from "react-icons/fa";
 
+/* === KST 포맷터 & 헬퍼 (추가) === */
+const _kstFormatter = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+function formatKST(dateLike = Date.now()) {
+  return _kstFormatter.format(new Date(dateLike));
+}
+
 export default function PostAdd() {
   const nav = useNavigate();
 
@@ -94,9 +107,20 @@ export default function PostAdd() {
           <Card.Body className="d-flex align-items-center gap-3 flex-wrap">
             <div>
               <div className="text-uppercase small fw-bold" style={{ color: "#64748b", letterSpacing: "0.06em" }}>
-                Board
+                게시판
               </div>
-              <h3 className="m-0 fw-bold" style={{ letterSpacing: "-0.2px" }}>게시글 등록</h3>
+              {/* 🔧 겹침 방지: letterSpacing 0, lineHeight 보정, 한글 줄바꿈 유지 */}
+              <h3
+                className="m-0 fw-bold"
+                style={{
+                  letterSpacing: 0,           // 음수 자간 금지
+                  lineHeight: "calc(1em + 8px)", // 픽셀 기반로 여유 확보 (1em + 8px)
+                  wordBreak: "keep-all",      // 한글 단어 단위 줄바꿈
+                  marginTop: 2                // 위쪽 살짝 띄우기
+                }}
+              >
+                게시글 등록
+              </h3>
             </div>
 
             <div className="ms-auto d-flex align-items-center gap-3">
@@ -198,7 +222,7 @@ export default function PostAdd() {
                         {form.title || <span className="text-muted">제목 미입력</span>}
                       </h5>
                       <div className="small text-muted mb-3">
-                        작성자: {loginUser?.empName || "관리자"} · {new Date().toLocaleString()}
+                        작성자: {loginUser?.empName || "관리자"} · {formatKST()}
                       </div>
                       <pre style={previewPre}>
 {form.content || "내용 미입력"}
@@ -262,7 +286,8 @@ const cardHeaderLight = { background: "#ffffff", border: "1px solid #eef2f7" };
 const cardBodyLight = { background: "#ffffff", border: "1px solid #eef2f7" };
 const chipLeft = { background: "#eef2ff", borderColor: "#e0e7ff", color: "#4f46e5", fontWeight: 700 };
 const chipRight = { background: "#f1f5f9", borderColor: "#e2e8f0", color: "#334155", fontWeight: 700 };
-const inputStrong = { fontWeight: 700, letterSpacing: "-0.2px", borderColor: "#dfe3ea" };
+// 🔧 입력창 자간 겹침 방지: letterSpacing 0
+const inputStrong = { fontWeight: 700, letterSpacing: 0, borderColor: "#dfe3ea" };
 const textarea = { minHeight: 280, borderColor: "#dfe3ea", fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap" };
 const previewBox = { border: "1px solid #e5e7eb", borderRadius: 12, background: "#fff", padding: 16 };
 const previewPre = { margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 1.75, fontSize: 15 };

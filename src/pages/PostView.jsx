@@ -1,12 +1,9 @@
-// 📄 PostView.jsx — Confirm Modal + Success Modal on Delete (no sessionStorage)
-// - 입장시 재등장 방지: sessionStorage 사용 제거
-// - (옵션) 다른 화면에서 state로 온 flash는 '한 번만' 소비 후 즉시 비움
-import { useEffect, useState } from "react";
+// 📄 PostView.jsx — Confirm Modal + Success Modal on Delete (KST fixed)
+import { useEffect, useState, useMemo } from "react"; // [ADD] useMemo 추가
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import axios from "axios";
 import {
-  Container, Card, Button, Badge, Row, Col, Spinner, ButtonGroup,
-  Modal
+  Container, Card, Button, Badge, Row, Col, Spinner, ButtonGroup, Modal
 } from "react-bootstrap";
 import { FaThumbtack, FaEdit, FaTrashAlt, FaArrowLeft } from "react-icons/fa";
 
@@ -18,18 +15,26 @@ export default function PostView() {
   const [dto, setDto] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // 삭제 확인 모달/상태
+  // 삭제 확인 모달
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // ✅ 삭제 성공 모달
-  const [success, setSuccess] = useState({
-    show: false,
-    msg: "",
-  });
+  // 삭제 성공 모달
+  const [success, setSuccess] = useState({ show: false, msg: "" });
 
-  // ✅ (옵션) 라우트 state로 넘어온 flash가 있으면 '한 번만' 보여주고 즉시 비움
-  //  — 이제 토스트 대신 성공 모달로 보여줌
+  // [ADD] 로그인 사용자 (세션에서)
+  const loginUser = useMemo(() => {
+    try { return JSON.parse(sessionStorage.getItem("user") || "{}"); }
+    catch { return {}; }
+  }, []);
+
+  // [ADD] 소유자/관리자만 수정·삭제 가능
+  const canEdit = !!dto && (
+    (loginUser?.empName && dto?.postWriter && loginUser.empName === dto.postWriter) ||
+    loginUser?.role === "ADMIN"
+  );
+
+  // flash 메시지 1회성 소비
   useEffect(() => {
     const f = location.state?.flash;
     if (f?.msg) {
@@ -38,7 +43,7 @@ export default function PostView() {
     }
   }, [location.state, location.pathname, nav]);
 
-  // 상세 로드 (조회수 증가 inc=true)
+  // 상세 조회
   useEffect(() => {
     if (!postId) return;
     setLoading(true);
@@ -50,15 +55,17 @@ export default function PostView() {
   }, [postId]);
 
   const handleDelete = async () => {
+    // [ADD] 프론트 가드
+    if (!canEdit) {
+      window.alert("본인 글만 삭제할 수 있습니다.");
+      return;
+    }
     try {
       setDeleting(true);
       await axios.delete(`http://localhost:9000/v1/post/${postId}`);
-
-      // ✅ 이 화면에서 성공 모달로 알림
       setSuccess({ show: true, msg: "삭제되었습니다." });
     } catch (e) {
       console.error(e);
-      // 실패는 간단히 alert (원하면 별도 오류 모달로 교체 가능)
       window.alert("삭제 실패");
     } finally {
       setDeleting(false);
@@ -91,7 +98,7 @@ export default function PostView() {
               </Button>
 
               <div className="ms-1 text-uppercase small fw-bold" style={{ color: "#64748b", letterSpacing: "0.06em" }}>
-                Board
+                게시판
               </div>
 
               <div className="ms-auto d-flex align-items-center gap-2">
@@ -104,24 +111,27 @@ export default function PostView() {
                   조회 <strong>{Number(dto?.postViewCnt ?? 0).toLocaleString()}</strong>
                 </Badge>
 
-                <ButtonGroup>
-                  <Button
-                    variant="primary"
-                    className="px-3 d-inline-flex align-items-center gap-2"
-                    onClick={() => nav(`/post/edit/${postId}`)}
-                    disabled={loading || !dto}
-                  >
-                    <FaEdit /> 수정
-                  </Button>
-                  <Button
-                    variant="outline-danger"
-                    className="px-3 d-inline-flex align-items-center gap-2"
-                    onClick={() => setShowConfirm(true)}
-                    disabled={loading || !dto}
-                  >
-                    <FaTrashAlt /> 삭제
-                  </Button>
-                </ButtonGroup>
+                {/* [ADD] 소유자/관리자에게만 버튼 노출 */}
+                {canEdit && (
+                  <ButtonGroup>
+                    <Button
+                      variant="primary"
+                      className="px-3 d-inline-flex align-items-center gap-2"
+                      onClick={() => nav(`/post/edit/${postId}`)}
+                      disabled={loading || !dto}
+                    >
+                      <FaEdit /> 수정
+                    </Button>
+                    <Button
+                      variant="outline-danger"
+                      className="px-3 d-inline-flex align-items-center gap-2"
+                      onClick={() => setShowConfirm(true)}
+                      disabled={loading || !dto}
+                    >
+                      <FaTrashAlt /> 삭제
+                    </Button>
+                  </ButtonGroup>
+                )}
               </div>
             </div>
           </Card.Header>
@@ -166,12 +176,7 @@ export default function PostView() {
       </Container>
 
       {/* 삭제 확인 모달 */}
-      <Modal
-        show={showConfirm}
-        onHide={() => setShowConfirm(false)}
-        centered
-        backdrop="static"
-      >
+      <Modal show={showConfirm} onHide={() => setShowConfirm(false)} centered backdrop="static">
         <Modal.Header closeButton>
           <Modal.Title className="fw-bold">삭제 확인</Modal.Title>
         </Modal.Header>
@@ -192,20 +197,12 @@ export default function PostView() {
         </Modal.Footer>
       </Modal>
 
-      {/* ✅ 삭제 성공 모달 */}
-      <Modal
-        show={success.show}
-        onHide={() => setSuccess({ show: false, msg: "" })}
-        centered
-        backdrop="static"
-        keyboard={false}
-      >
+      {/* 삭제 성공 모달 */}
+      <Modal show={success.show} onHide={() => setSuccess({ show: false, msg: "" })} centered backdrop="static" keyboard={false}>
         <Modal.Header closeButton>
           <Modal.Title>알림</Modal.Title>
         </Modal.Header>
-        <Modal.Body className="fw-semibold">
-          {success.msg}
-        </Modal.Body>
+        <Modal.Body className="fw-semibold">{success.msg}</Modal.Body>
         <Modal.Footer>
           <Button variant="primary" onClick={goList}>
             확인
@@ -220,14 +217,31 @@ export default function PostView() {
 function fmt(d) {
   if (!d) return "-";
   try {
-    return new Intl.DateTimeFormat("ko-KR", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(new Date(d));
+    const date = new Date(d);
+    // ✅ UTC 기준에서 한국시간(+9h)으로 변환
+    const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${kst.getFullYear()}.${pad(kst.getMonth() + 1)}.${pad(kst.getDate())}. ${pad(kst.getHours())}:${pad(kst.getMinutes())}`;
   } catch {
     return String(d);
   }
 }
 
-const contentBox = { border: "1px solid #e5e7eb", borderRadius: 12, background: "#fff", padding: 18 };
-const contentPre = { margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 1.8, fontSize: 15 };
+/* ✅ 가독성 강화된 본문 스타일 */
+const contentBox = {
+  background: "#f3f4f6",
+  border: "1px solid #cbd5e1",
+  borderRadius: 12,
+  padding: 18,
+  boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+};
+
+const contentPre = {
+  margin: 0,
+  color: "#111827",
+  whiteSpace: "pre-wrap",
+  wordBreak: "break-word",
+  lineHeight: 1.9,
+  fontSize: 16,
+};

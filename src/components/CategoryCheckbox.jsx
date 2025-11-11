@@ -41,7 +41,7 @@ function CategoryCheckbox({ codeAId, checkedList, onChange }) {
   };
 
     return <>
-      <div className="row g-2 border rounded shadow-sm">
+      <div className="row g-2 border rounded shadow-sm pb-2">
         {options.map(opt => (
           <div className="col-4" key={opt.codeBId}>
             <label>

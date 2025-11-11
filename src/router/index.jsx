@@ -8,7 +8,6 @@ import Home from "../pages/Home.jsx";
 import EmpList from "../pages/EmpList.jsx";
 import EmpDetail from "../pages/EmpDetail.jsx";
 import EmpEdit from "../pages/EmpEdit.jsx";
-import EmpAttendanceMy from "../pages/EmpAttendance/myAttendance.jsx";
 import SchedulePage from "../pages/SchedulePage.jsx";
 
 
@@ -42,6 +41,7 @@ import MemberDetail from "../pages/Members/MemberDetail.jsx";
 
 // ✅ 그래프 테스트
 import GraphTest from "../pages/GraphTest.jsx";
+import EmpAttendance from "../pages/EmpAttendance.jsx";
 
 
 
@@ -75,7 +75,7 @@ const router = createBrowserRouter([
       { path: "emp", element: <EmpList /> },
       { path: "emp/:empNum", element: <EmpDetail /> },
       { path: "emp/edit/:empNum", element: <EmpEdit /> },
-      { path: "attendance/my", element: <EmpAttendanceMy /> },
+      {path:"attendance/my", element:<EmpAttendance />},
       { path: "schedule", element: <SchedulePage /> },
 
       // 회원

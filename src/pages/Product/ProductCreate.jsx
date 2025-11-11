@@ -125,7 +125,7 @@ function ProductCreate() {
 
         // 메모 검증 
         const sanitizedMemo =
-            values.memo?.trim() === '' ? '특이사항 없음' : values.memo.trim();
+            values.memo?.trim() === '' ? '특이사항 없음' : values.memo;
 
         let endpoint = '/v1/product';
         let payload;

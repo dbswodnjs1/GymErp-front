@@ -8,6 +8,19 @@ import {
 } from "react-bootstrap";
 import { FaThumbtack, FaSave, FaTimes, FaEye, FaEdit, FaUndo } from "react-icons/fa";
 
+/* === KST 포맷터 & 헬퍼 (추가) === */
+const _kstFormatter = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+function formatKST(dateLike = Date.now()) {
+  return _kstFormatter.format(new Date(dateLike));
+}
+
 export default function PostEdit() {
   const { postId } = useParams();
   const nav = useNavigate();
@@ -50,6 +63,15 @@ export default function PostEdit() {
           postWriter: v.postWriter ?? (loginUser?.empName || "관리자"),
           postPinned: v.postPinned ?? "N",
         };
+
+        // [ADD] 권한 체크: 본인/관리자만 편집 가능
+        const isOwner = !!(loginUser?.empName && v?.postWriter && loginUser.empName === v.postWriter);
+        const isAdmin = loginUser?.role === "ADMIN";
+        if (!isOwner && !isAdmin) {
+          alert("본인 글만 수정할 수 있습니다.");
+          return nav(`/post/${postId}`, { replace: true });
+        }
+
         setForm(next);
         setOrigin(next);
       })
@@ -75,6 +97,13 @@ export default function PostEdit() {
   };
 
   const submit = async () => {
+    // [ADD] 제출 시도 시에도 한번 더 가드
+    const isOwner = !!(loginUser?.empName && form?.postWriter && loginUser.empName === form.postWriter);
+    const isAdmin = loginUser?.role === "ADMIN";
+    if (!isOwner && !isAdmin) {
+      return toast("본인 글만 수정할 수 있습니다.", "danger");
+    }
+
     if (!form.postTitle?.trim()) return toast("제목을 입력하세요.", "danger");
     if (!form.postContent?.trim()) return toast("내용을 입력하세요.", "danger");
     try {
@@ -110,7 +139,7 @@ export default function PostEdit() {
           <Card.Body className="d-flex align-items-center gap-3 flex-wrap">
             <div>
               <div className="text-uppercase small fw-bold" style={{ color: "#64748b", letterSpacing: "0.06em" }}>
-                Board
+                게시판
               </div>
               <h3 className="m-0 fw-bold" style={{ letterSpacing: "-0.2px" }}>게시글 수정</h3>
             </div>
@@ -178,7 +207,6 @@ export default function PostEdit() {
                       style={inputStrong}
                       aria-invalid={titleLen === 0 || titleLen > titleMax}
                     />
-                  
                   </InputGroup>
                 </div>
                 {/* 내용 */}
@@ -199,7 +227,6 @@ export default function PostEdit() {
                     style={textarea}
                   />
                 </div>
-
                 {/* 미리보기 */}
                 {showPreview && (
                   <div>
@@ -214,7 +241,7 @@ export default function PostEdit() {
                         {form.postTitle || <span className="text-muted">제목 미입력</span>}
                       </h5>
                       <div className="small text-muted mb-3">
-                        작성자: {form.postWriter || "관리자"} · {new Date().toLocaleString()}
+                        작성자: {form.postWriter || "관리자"} · {formatKST()}
                       </div>
                       <pre style={previewPre}>
 {form.postContent || "내용 미입력"}

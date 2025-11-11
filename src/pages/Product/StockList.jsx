@@ -14,7 +14,6 @@ function StockList() {
     const [search, setSearch] = useState({ keyword: "" });
 
     // 오른쪽: 재고 내역 상태
-    const [selectedProductId, setSelectedProductId] = useState(null);
     const [selectedProductDetails, setSelectedProductDetails] = useState(null); // 선택된 상품 상세 정보
     const [inboundPageInfo, setInboundPageInfo] = useState({ list: [], pageNum: 1, totalPageCount: 1 });
     const [outboundPageInfo, setOutboundPageInfo] = useState({ list: [], pageNum: 1, totalPageCount: 1 });
@@ -27,6 +26,7 @@ function StockList() {
     const productPageNum = params.get("productPage") || 1;
     const keyword = params.get("keyword") || "";
     const categoryCodes = params.getAll("categoryCodes") || [];
+    const selectedProductId = params.get('productId');
 
     // 상품 목록(왼쪽) 데이터 로드
     useEffect(() => {
@@ -41,30 +41,27 @@ function StockList() {
         axios.get(`/v1/product?${qs.toString()}`)
             .then(res => {
                 setPageInfo(res.data);
-                const currentProductId = params.get('productId');
-                if (!currentProductId && res.data.list.length > 0) {
-                    // 페이지 로드 시, URL에 productId가 없으면 목록의 첫 항목을 기본 선택 (URL은 변경 안함)
-                    setSelectedProductId(res.data.list[0].productId);
+                // 페이지 첫 로드 시, URL에 productId가 없으면 목록의 첫 항목을 기본 선택
+                if (!selectedProductId && res.data.list.length > 0) {
+                    const firstProductId = res.data.list[0].productId;
+                    // URL을 변경하지 않고, 내부 상태만 업데이트하여 오른쪽 패널을 렌더링
+                    // 이 방법은 복잡성을 증가시키므로, URL을 업데이트하는 방식을 유지합니다.
+                    // 아래 handleRowClick에서 이 로직을 처리합니다.
+                    const newParams = new URLSearchParams(params.toString());
+                    newParams.set('productId', firstProductId);
+                    setSearchParams(newParams);
                 }
             })
             .catch(err => console.error('상품 목록 조회 실패:', err))
             .finally(() => setLoading(false));
     }, [productPageNum, keyword, JSON.stringify(categoryCodes), sortConfig]);
 
-    // 선택된 상품 ID 및 재고 내역(오른쪽) 로드
-    useEffect(() => {
-        const productIdFromUrl = params.get('productId');
-        if (productIdFromUrl) {
-            setSelectedProductId(productIdFromUrl);
-        } else if (pageInfo.list.length > 0 && !productIdFromUrl) {
-            // URL에 productId가 없고 목록이 있으면 첫번째 항목 ID를 사용
-            setSelectedProductId(pageInfo.list[0].productId);
-        }
-    }, [params, pageInfo.list]);
-
     // selectedProductId가 변경되면, 해당 상품의 상세 정보와 재고 내역을 불러옴
     useEffect(() => {
-        if (!selectedProductId) return;
+        if (!selectedProductId) {
+            setSelectedProductDetails(null);
+            return;
+        };
 
         // 1. 상품 상세 정보 가져오기
         axios.get(`/v1/product/${selectedProductId}`)
@@ -186,8 +183,6 @@ function StockList() {
                 <h3 className="mb-1">{selectedProductDetails.name || '상품 정보'}</h3>
                 <p className="text-muted mb-3">
                     상품 구분: {selectedProductDetails.codeBName || '-'}
-                    <span className="mx-2">·</span>
-                    현재 재고: {selectedProductDetails.quantity || 0}
                 </p>
                 <div className="row justify-content-center g-2 align-items-end mb-4">
                     <div className="col-md-8">
@@ -208,7 +203,7 @@ function StockList() {
                         <table className="table table-sm text-center">
                             <thead className="table-light"><tr><th>날짜</th><th>수량</th></tr></thead>
                             <tbody>
-                                {inboundPageInfo.list.map(item => <tr key={`in-${item.stockInboundId}`}><td>{formatDateTime(item.createdAt)}</td><td>{item.quantity}</td></tr>)}
+                                {inboundPageInfo.list.map(item => <tr key={`in-${item.createdAt}`}><td>{formatDateTime(item.createdAt)}</td><td>{item.quantity}</td></tr>)}
                             </tbody>
                         </table>
                         <Pagination page={inboundPageInfo.pageNum} totalPage={inboundPageInfo.totalPageCount} onPageChange={inboundPageMove} />
@@ -221,7 +216,7 @@ function StockList() {
                         <table className="table table-sm text-center">
                             <thead className="table-light"><tr><th>날짜</th><th>수량</th><th>사유</th></tr></thead>
                             <tbody>
-                                {outboundPageInfo.list.map(item => <tr key={`out-${item.stockOutboundId}`}><td>{formatDateTime(item.createdAt)}</td><td>{item.quantity}</td><td>{item.notes}</td></tr>)}
+                                {outboundPageInfo.list.map(item => <tr key={`out-${item.createdAt}`}><td>{formatDateTime(item.createdAt)}</td><td>{item.quantity}</td><td>{item.notes}</td></tr>)}
                             </tbody>
                         </table>
                         <Pagination page={outboundPageInfo.pageNum} totalPage={outboundPageInfo.totalPageCount} onPageChange={outboundPageMove} />
