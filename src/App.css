@@ -1,0 +1,32 @@
+.app-main { padding-top: 56px; }
+@media (min-width: 768px) { .app-main { margin-left: 240px; } }
+
+
+/* input type=number 에서 우측 화살표 숨겨주는 css */
+/* Chrome, Safari, Edge, Opera */
+.no-spinners::-webkit-outer-spin-button,
+.no-spinners::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Firefox */
+.no-spinners[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* src/App.css */
+body { margin: 0; }
+
+.table-row-clickable {
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.table-row-clickable:hover {
+  background-color: #fff3e0; /* hover 시 은은한 오렌지 톤 */
+}
+
+.table-row-selected {
+  background-color: #ffb74d !important; /* 선택된 상품 행을 또렷한 오렌지로 강조 */
+  color: #212529;
+}

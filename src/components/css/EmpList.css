@@ -1,0 +1,27 @@
+/* 대시보드 glass 배경과 동일하게 */
+.detail-pane{
+  background: var(--glass-sidebar-bg);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+}
+
+/* 상세 카드들은 흰색 유지 + 살짝 그림자 */
+.detail-pane .card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(30, 42, 62, 0.08);
+}
+
+/* 스크롤바(선택): 배경과 어울리게 트랙/썸 색 살짝만 */
+.detail-pane::-webkit-scrollbar {
+  width: 10px;
+}
+.detail-pane::-webkit-scrollbar-track {
+  background: #eaf4ff;
+}
+.detail-pane::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+  border-radius: 8px;
+}

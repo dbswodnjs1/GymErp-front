@@ -1,0 +1,29 @@
+:root{
+--glass-sidebar-bg: #f3f4f6;  /* 아주 옅은 회색 */
+}
+
+.detail-pane{
+  background: var(--glass-sidebar-bg) !important;
+  min-height: 100vh;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  /* 필요하면 유리 효과도 켜기
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  */
+}
+
+.detail-pane .card{
+  background: #fff;
+  border: 0;
+  box-shadow: 0 8px 24px rgba(18,22,33,.08);
+  border-radius: 1rem;
+}
+
+/* 전역 CSS(예: App.css)나 detail-pane.css 끝부분에 추가 */
+.right-pane {
+  background: #ecedf0 !important; /* 아주 옅은 회색 */
+  /* 만약 유리톤 원하면 아래 두 줄도 같이 */
+  /* backdrop-filter: blur(6px);
+     -webkit-backdrop-filter: blur(6px); */
+}

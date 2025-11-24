@@ -1,0 +1,353 @@
+/* =========================================================
+   SchedulePage — Final Scoped Styles
+   (scope: .schedule-page)
+   ========================================================= */
+
+/* ---------- CSS Variables (전역 사용 OK) ---------- */
+:root {
+  --cal-select-border: rgba(30, 100, 255, 0.6);
+  --cal-select-bg: rgba(30, 100, 255, 0.12);
+  --cal-today-bg: #d8ecff;
+  --cal-today-border: #000;
+}
+
+/* =========================================================
+   상단 헤더 & 배지 & 서브타이틀
+   ========================================================= */
+/* 공통 배지 베이스 */
+.icon-badge {
+  width: 50px; height: 50px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.06);
+  background: linear-gradient(180deg,#f8fafc 0%, #eef2f7 100%);
+  box-shadow:
+    0 6px 16px rgba(15,23,42,.12),   /* 부드러운 바깥 그림자 */
+    inset 0 1px 0 rgba(255,255,255,.6); /* 위쪽 하이라이트 */
+}
+
+/* 얇은 외곽 링 */
+.icon-badge--ring {
+  position: relative;
+}
+.icon-badge--ring::after {
+  content:""; position:absolute; inset:-2px;
+  border-radius: 14px;
+  background: radial-gradient(120% 120% at 50% -10%, rgba(255,255,255,.8), rgba(0,0,0,.04));
+  pointer-events:none;
+}
+
+/* 글래스 느낌 (살짝 투명 + 블러) */
+.icon-badge--glass {
+  background: linear-gradient(180deg, rgba(255,255,255,.75), rgba(246,248,252,.7));
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,.7);
+  box-shadow:
+    0 8px 24px rgba(15,23,42,.12),
+    inset 0 1px 0 rgba(255,255,255,.8);
+}
+
+/* 뉴모피즘 버튼 느낌 */
+.icon-badge--neo {
+  background: #f2f4f8;
+  box-shadow:
+    8px 8px 16px #d7dbe3,
+    -8px -8px 16px #ffffff;
+}
+
+/* 아이콘 컬러/크기 */
+.icon-badge i {
+  font-size: 25px;
+  color: #475569; /* slate-600 */
+}
+
+/* 다크모드 보정 */
+@media (prefers-color-scheme: dark) {
+  .icon-badge {
+    background: linear-gradient(180deg,#1f2937,#111827);
+    border-color: rgba(255,255,255,.08);
+    box-shadow: 0 8px 20px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .icon-badge i { color:#e5e7eb; }
+}
+
+
+.schedule-page .cal-subtitle {
+  margin-top: 2px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #4b5563;
+  letter-spacing: .2px;
+}
+.schedule-page .cal-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+}
+
+/* =========================================================
+   관리자 검색바
+   ========================================================= */
+.schedule-page .sch-wrap { margin-bottom: 10px; }
+
+.schedule-page .sch-card {
+  background: #ffffff;
+  border: 1px solid #e9ecf1;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 10px rgba(18, 22, 33, 0.04);
+}
+
+.schedule-page .sch-label {
+  font-size: 12px;
+  letter-spacing: .2px;
+  color: #6c757d;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.schedule-page .sch-input,
+.schedule-page .sch-select {
+  border-radius: 12px;
+  border: 1px solid #dfe3ea;
+  font-size: 14px;
+  padding: 10px 12px;
+  transition: box-shadow .15s ease, border-color .15s ease;
+}
+.schedule-page .sch-input::placeholder { color: #a6aebb; }
+.schedule-page .sch-input:focus,
+.schedule-page .sch-select:focus {
+  border-color: #7a6fff;
+  box-shadow: 0 0 0 4px rgba(122,111,255,.12);
+}
+
+.schedule-page .sch-actions .btn {
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 600;
+}
+.schedule-page .sch-actions .btn-primary {
+  background: #695cff; border-color: #695cff;
+}
+.schedule-page .sch-actions .btn-primary:hover {
+  filter: brightness(.95);
+}
+.schedule-page .sch-actions .btn-secondary {
+  background: #e9eef7; color:#334155; border-color:#e9eef7;
+}
+.schedule-page .sch-actions .btn-secondary:hover {
+  background:#e1e7f3;
+}
+
+/* =========================================================
+   Page Header / Divider / Month Title (선택)
+   ========================================================= */
+.schedule-page .page-header { margin-top: 6px; }
+
+.schedule-page .page-title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  line-height: 1.15;
+  position: relative;
+}
+.schedule-page .page-title::after {
+  content: "";
+  display: block;
+  width: 72px; height: 3px;
+  border-radius: 999px;
+  background: #212529;
+  margin-top: 10px;
+}
+
+.schedule-page .page-subtitle { font-size: 0.95rem; }
+
+.schedule-page .page-divider {
+  margin-top: 14px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 576px) {
+  .schedule-page .page-title { font-size: 26px; }
+  .schedule-page .page-title::after { width: 56px; }
+}
+
+.schedule-page .month-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  line-height: 1.1;
+  margin-top: 2px;
+  margin-bottom: 6px;
+}
+.schedule-page .toolbar-divider {
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .schedule-page .month-title { font-size: 22px; margin-bottom: 4px; }
+  .schedule-page .toolbar-wrap { flex-wrap: wrap; row-gap: 8px; }
+}
+
+/* =========================================================
+   react-big-calendar: Toolbar
+   ========================================================= */
+.schedule-page .rbc-toolbar {
+  margin: 8px 0 14px;
+  align-items: center;
+}
+.schedule-page .rbc-toolbar .rbc-toolbar-label {
+  font-weight: 800;
+  font-size: 16px;
+  color: #2b313b;
+}
+.schedule-page .rbc-toolbar .rbc-btn-group > button {
+  border-radius: 10px;
+  border: 1px solid #dfe3ea;
+  padding: 7px 12px;
+  background: #fff;
+  transition: background .15s ease, box-shadow .15s ease;
+}
+.schedule-page .rbc-toolbar .rbc-btn-group > button:hover {
+  background: #f6f8fb;
+  box-shadow: 0 2px 6px rgba(18,22,33,.06);
+}
+.schedule-page .rbc-toolbar .rbc-btn-group > button.rbc-active {
+  background: #695cff; color:#fff; border-color:#695cff;
+}
+
+/* =========================================================
+   Calendar Base Sizing / Events
+   ========================================================= */
+.schedule-page .rbc-calendar {
+  width: 95%;
+  margin: 0 auto;
+  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+}
+.schedule-page .rbc-month-view { min-height: 730px; }
+.schedule-page .rbc-day-bg { height: 140px; }
+
+.schedule-page .rbc-row-content { padding: 0 3px; }
+
+.schedule-page .rbc-event {
+  font-size: 0.8rem;
+  line-height: 1.1;
+  border-radius: 6px;
+  padding: 1px 4px;
+  height: 18px;
+  overflow: hidden;
+  font-weight: 600;
+  letter-spacing: .1px;
+}
+.schedule-page .rbc-event-content {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* =========================================================
+   Off-range & Weekend date colors (Month view)
+   ========================================================= */
+.schedule-page .rbc-month-view .rbc-day-bg.rbc-off-range-bg {
+  background: #e6e6e7 !important; /* 더 밝게: #fafbfd, #f8fafc 가능 */
+}
+
+/* 일요일 */
+.schedule-page .rbc-month-view .rbc-row .rbc-date-cell:nth-child(1) .rbc-button-link {
+  color: #e03131 !important;
+}
+/* 토요일 */
+.schedule-page .rbc-month-view .rbc-row .rbc-date-cell:nth-child(7) .rbc-button-link {
+  color: #e03131 !important;
+}
+
+/* 오프레인지에서 주말 색상 */
+.schedule-page .rbc-month-view .rbc-row .rbc-date-cell.rbc-off-range:nth-child(1) .rbc-button-link,
+.schedule-page .rbc-month-view .rbc-row .rbc-date-cell.rbc-off-range:nth-child(7) .rbc-button-link {
+  color: #a7a7a7 !important;
+}
+
+/* =========================================================
+   Selection & Today Styles (Final)
+   ========================================================= */
+/* 드래그/선택 박스 */
+.schedule-page .rbc-slot-selection {
+  border: 0 !important;
+  box-shadow: inset 0 0 0 2px var(--cal-select-border) !important;
+  background: var(--cal-select-bg) !important;
+  border-radius: 8px;
+}
+
+/* 월간에서 선택된 셀 하이라이트 */
+.schedule-page .rbc-month-view .rbc-selected-cell {
+  background: rgba(30, 100, 255, 0.10) !important;
+}
+
+/* 오늘 날짜 기본 배경(안전망) */
+.schedule-page .rbc-calendar .rbc-today,
+.schedule-page .rbc-month-view .rbc-day-bg.rbc-today {
+  background-color: #d8ecff !important;
+}
+
+/* 오늘: 월/주/일 공통 — 파랑 배경 + 검은 테두리 */
+.schedule-page .rbc-month-view .rbc-day-bg.is-today,
+.schedule-page .rbc-time-view .rbc-day-slot.is-today,
+.schedule-page .rbc-time-header .rbc-header.rbc-today {
+  box-shadow: inset 0 0 0 0.5px #000 !important;
+  background-color: #d8ecff !important;
+  border-radius: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+/* 월뷰 내용 레이어까지(아랫변 가림 방지) */
+.schedule-page .rbc-month-view .rbc-date-cell.is-today {
+  background-color: var(--cal-today-bg) !important;
+  box-shadow: inset 0 0 0 2px var(--cal-today-border) !important;
+  border-radius: 8px;
+}
+
+
+/*관리자 버튼 색깔 바꿔보기*/
+/* ----- Gray Filled (주버튼) ----- */
+.btn-slate {
+  --bg: #2e69bb;          /* slate-600 */
+  --bg-hover: #374151;    /* slate-700 */
+  --fg: #fff;
+  --bd: #434c5a;          /* 테두리 */
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  padding: .375rem .75rem;
+  line-height: 1.2;
+  box-shadow: 0 1px 0 rgba(16,24,40,.04);
+  transition: all .15s ease-in-out;
+}
+.btn-slate:hover { background: var(--bg-hover); border-color: var(--bg-hover); }
+.btn-slate:active { filter: brightness(.95); }
+.btn-slate:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(148,163,184,.35); }
+
+/* 아이콘 여백(부트스트랩 아이콘 쓸 때) */
+.btn-slate .bi, .btn-ghost-gray .bi { margin-right: .35rem; position: relative; top: -1px; }
+
+/* ----- Gray Ghost (보조버튼) ----- */
+.btn-ghost-gray {
+  --fg: #1a5cc7;          /* slate-700 */
+  --bd: #cfd6e4;
+  --bg-h: #374151;        /* hover 배경 */
+  color: var(--fg);
+  background: #fff;
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  padding: .375rem .75rem;
+  line-height: 1.2;
+  transition: all .15s ease-in-out;
+}
+.btn-ghost-gray:hover { background: var(--bg-h); border-color: #d3ddec; }
+.btn-ghost-gray:active { background: #5b6d88; }
+.btn-ghost-gray:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(148,163,184,.35); }
+

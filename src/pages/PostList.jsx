@@ -1,0 +1,201 @@
+// src/pages/PostList.jsx
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import Pagination from "../components/Pagination";
+import "bootstrap/dist/css/bootstrap.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
+
+// 응답 스키마 정규화
+function norm(row) {
+  return {
+    id: row.postId ?? row.id,
+    title: row.postTitle ?? row.title ?? "",
+    writer: row.postWriter ?? row.writerName ?? "",
+    pinned: row.postPinned ?? row.pinned ?? "N",
+    viewCnt: row.postViewCnt ?? row.viewCnt ?? 0,
+    createdAt: row.postCreatedAt ?? row.createdAt ?? null,
+  };
+}
+
+export default function PostList() {
+  const nav = useNavigate();
+  const [rows, setRows] = useState([]);
+  const [keyword, setKeyword] = useState("");     // 입력창 값
+  const [searchTerm, setSearchTerm] = useState(""); // 실제 검색에 적용되는 값
+  const [filterType, setFilterType] = useState("all");
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const pageSize = 10;
+
+  const loaded = useRef(false);
+
+  useEffect(() => {
+    if (loaded.current) return;
+    loaded.current = true;
+
+    setLoading(true);
+    axios
+      .get("/v1/post")
+      .then((res) => {
+        const list = Array.isArray(res.data) ? res.data.map(norm) : [];
+        setRows(list);
+      })
+      .catch((err) => {
+        console.error("게시글 목록 불러오기 실패:", err);
+        alert("목록 불러오기 실패");
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // ✅ 검색 필터 (searchTerm이 바뀔 때만 실행)
+  const filtered = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((v) => {
+      if (filterType === "title") return v.title.toLowerCase().includes(q);
+      if (filterType === "writer") return v.writer.toLowerCase().includes(q);
+      return (
+        v.title.toLowerCase().includes(q) ||
+        v.writer.toLowerCase().includes(q)
+      );
+    });
+  }, [rows, searchTerm, filterType]);
+
+  // ✅ 페이지 계산
+  const totalPage = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageList = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
+
+  const d8 = (s) => (typeof s === "string" ? s.slice(0, 10) : "-");
+
+  // ✅ 검색 / 초기화 버튼 동작
+  const handleSearch = () => {
+    setSearchTerm(keyword); // 실제 검색어 반영
+    setPage(1);
+  };
+
+  const handleReset = () => {
+    setKeyword("");
+    setSearchTerm("");
+    setFilterType("all");
+    setPage(1);
+  };
+
+  return (
+    <div className="container py-4">
+      {/* 헤더 */}
+      <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h2 className="m-0">게시판</h2>
+
+        <div className="d-flex align-items-center gap-2 flex-wrap" style={{ minWidth: 1000 }}>
+          {/* 🔽 검색 필터 셀렉트 */}
+          <select
+            className="form-select"
+            style={{ width: 120 }}
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+          >
+            <option value="all">전체</option>
+            <option value="title">제목</option>
+            <option value="writer">작성자</option>
+          </select>
+
+          {/* 🔍 검색 입력 */}
+          <input
+            className="form-control"
+            style={{ flex: 1, minWidth: 200 }}
+            placeholder="검색어 입력..."
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          />
+
+          {/* 🔘 검색 버튼 */}
+          <button className="btn btn-primary" onClick={handleSearch}>
+            검색
+          </button>
+
+          {/* ♻️ 초기화 버튼 */}
+          <button className="btn btn-outline-secondary" onClick={handleReset}>
+            초기화
+          </button>
+
+          {/* ➕ 등록 버튼 */}
+          <button
+            className="btn btn-success"
+            style={{ width: "100px", height: "38px" }}
+            onClick={() => nav("/post/new")}
+          >
+            등록
+          </button>
+        </div>
+      </div>
+
+      {/* 표 */}
+      <div className="table-responsive">
+        <table className="table table-hover align-middle text-center mb-3">
+          <thead className="table-dark sticky-top">
+            <tr>
+              <th style={{ width: 90 }}>번호</th>
+              <th className="text-start">제목</th>
+              <th style={{ width: 180 }} className="d-none d-md-table-cell">
+                작성자
+              </th>
+              <th style={{ width: 120 }}>조회수</th>
+              <th style={{ width: 160 }}>작성일</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="py-4">
+                  <div className="d-flex justify-content-center align-items-center gap-2 text-muted">
+                    <div className="spinner-border spinner-border-sm" role="status" />
+                    <span>불러오는 중...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : pageList.length > 0 ? (
+              pageList.map((v) => (
+                <tr key={v.id}>
+                  <td>{v.id}</td>
+                  <td className="text-start">
+                    {v.pinned === "Y" && (
+                      <span className="me-2" title="상단 고정">📌</span>
+                    )}
+                    <span
+                      className="text-decoration-underline text-primary d-inline-block text-truncate"
+                      style={{ maxWidth: 520, cursor: "pointer" }}
+                      role="button"
+                      onClick={() => nav(`/post/${v.id}`)}
+                    >
+                      {v.title || "(제목 없음)"}
+                    </span>
+                  </td>
+                  <td className="d-none d-md-table-cell">{v.writer}</td>
+                  <td>{v.viewCnt}</td>
+                  <td>{d8(v.createdAt)}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} className="text-muted py-4">
+                  게시글이 없습니다.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 페이지네이션 */}
+      <div className="d-flex justify-content-center">
+        <Pagination page={page} totalPage={totalPage} onPageChange={setPage} />
+      </div>
+    </div>
+  );
+}
